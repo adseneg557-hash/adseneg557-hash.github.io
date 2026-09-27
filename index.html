@@ -1,0 +1,2424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Frameo — social app prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#161A2B; --ink-soft:#565C74; --paper:#F3F4F8; --surface:#FFFFFF;
+    --line:#E1E3EC; --red:#FF4433; --red-soft:#FFE4E0; --navy:#1A2238; --gold:#F2A93B;
+    --shadow:0 1px 2px rgba(22,26,43,.04), 0 8px 24px -12px rgba(22,26,43,.12);
+    --font-display:'Space Grotesk', sans-serif; --font-body:'Inter', sans-serif;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root[data-theme="dark"]{
+    --ink:#F2F3F8; --ink-soft:#9498AC; --paper:#0E0F17; --surface:#15161F;
+    --line:#262837; --red:#FF5C4D; --red-soft:#2A1815; --navy:#2A3358; --gold:#F2A93B;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+  @keyframes shimmer{0%{background-position:-300px 0;}100%{background-position:300px 0;}}
+  .skel{background:linear-gradient(90deg, var(--paper) 25%, var(--line) 37%, var(--paper) 63%); background-size:400px 100%; animation:shimmer 1.4s ease infinite; border-radius:8px;}
+  @keyframes heartpop{0%{transform:scale(0);opacity:0;}25%{transform:scale(1.2);opacity:1;}45%{transform:scale(.95);}65%{transform:scale(1.08);}100%{transform:scale(1);opacity:0;}}
+  .heart-burst{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:90px; height:90px; color:#fff; filter:drop-shadow(0 4px 14px rgba(0,0,0,.35)); pointer-events:none; animation:heartpop .85s ease forwards; z-index:5;}
+  @keyframes likepop{0%{transform:scale(1);}35%{transform:scale(1.35);}100%{transform:scale(1);}}
+  .like-pop{animation:likepop .32s ease;}
+  .verified-badge{display:inline-flex; vertical-align:middle; margin-left:3px; color:#3897F0; flex-shrink:0;}
+  .verified-badge svg{width:14px;height:14px;}
+  .progress-row{display:flex; gap:4px; padding:8px 10px 0;}
+  .progress-seg{flex:1; height:2.5px; border-radius:100px; background:rgba(255,255,255,.35); overflow:hidden;}
+  .progress-seg .fill{height:100%; width:0%; background:#fff; border-radius:100px;}
+  .progress-seg.done .fill{width:100%;}
+  .progress-seg.active .fill{animation:storyfill 4s linear forwards;}
+  @keyframes storyfill{from{width:0%;}to{width:100%;}}
+  .online-dot{position:absolute; width:10px; height:10px; border-radius:50%; background:#3AD07A; border:2px solid var(--surface); bottom:-1px; right:-1px;}
+  .avatar-wrap{position:relative; display:inline-flex; flex-shrink:0;}
+  .sheet-overlay{position:fixed; inset:0; background:rgba(10,11,18,.5); z-index:200; display:none; align-items:flex-end; justify-content:center;}
+  .sheet-overlay.show{display:flex;}
+  .sheet{width:100%; max-width:480px; background:var(--surface); border-radius:20px 20px 0 0; padding:8px 0 calc(10px + env(safe-area-inset-bottom,0px)); animation:sheetup .2s ease;}
+  @keyframes sheetup{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .sheet-title{text-align:center; font-size:12px; color:var(--ink-soft); padding:10px 18px; border-bottom:1px solid var(--line); margin-bottom:4px;}
+  .sheet-btn{display:block; width:100%; background:none; border:none; padding:14px 20px; font-size:14.5px; font-weight:600; text-align:center; color:var(--ink); cursor:pointer; font-family:var(--font-body);}
+  .sheet-btn.danger{color:var(--red);}
+  .sheet-btn.cancel{border-top:6px solid var(--paper); color:var(--ink-soft); font-weight:600;}
+  .pin-badge{display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700; color:var(--ink-soft); margin-left:8px;}
+  .pin-badge svg{width:11px;height:11px;}
+  .hashtag-chip{background:var(--paper); border:1px solid var(--line); border-radius:100px; padding:10px 14px; flex-shrink:0;}
+  .hashtag-chip b{display:block; font-size:13px;}
+  .hashtag-chip span{font-size:11px; color:var(--ink-soft);}
+  .comment-row{padding:10px 18px; font-size:13px; line-height:1.4; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:flex-start;}
+  .comment-row .ctext{flex:1;}
+  .comment-like-btn{background:none; border:none; cursor:pointer; color:var(--ink-soft); display:flex; align-items:center; gap:3px; padding:2px; flex-shrink:0;}
+  .comment-like-btn svg{width:14px;height:14px;}
+  .comment-like-btn.liked{color:var(--red);}
+  .comment-like-btn span{font-size:10.5px;}
+  .reaction-pile{display:flex; align-items:center; margin-right:6px;}
+  .reaction-pile span{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid var(--surface); margin-left:-8px;}
+  .reaction-pile span:first-child{margin-left:0;}
+  .analytics-tabs{display:flex; gap:22px; padding:14px 18px 0;}
+  .analytics-tab{background:none; border:none; font-size:13.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; padding-bottom:10px; border-bottom:2px solid transparent;}
+  .analytics-tab.active{color:#3897F0; border-bottom-color:#3897F0;}
+  .menu-profile-card{margin:14px 18px; background:var(--paper); border-radius:16px; padding:16px; display:flex; align-items:center; gap:14px;}
+  .menu-profile-card .avatar{width:56px;height:56px; font-size:20px;}
+  .menu-profile-card .mname{font-weight:700; font-size:15px;}
+  .menu-profile-card .mmeta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .menu-profile-card .mlink{font-size:12.5px; color:#3897F0; font-weight:600; margin-top:4px; display:inline-block;}
+  .referral-btn{margin:0 18px 18px; display:flex; align-items:center; justify-content:space-between; background:linear-gradient(135deg,var(--navy),#2A3A6B); color:#fff; border:none; border-radius:14px; padding:15px 18px; font-weight:700; font-size:14px; cursor:pointer; width:calc(100% - 36px); font-family:var(--font-body);}
+  .menu-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:0 18px 8px;}
+  .menu-tile{border:1px solid var(--line); border-radius:14px; padding:16px 8px; display:flex; flex-direction:column; align-items:center; gap:8px; background:none; cursor:pointer; font-family:var(--font-body);}
+  .menu-tile-icon{width:38px;height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:18px;}
+  .menu-tile span{font-size:12px; font-weight:700; color:var(--ink);}
+  .menu-account-row{margin:0 18px 12px; display:flex; align-items:center; gap:12px; background:var(--paper); border-radius:14px; padding:14px 16px; cursor:pointer;}
+  .menu-account-row .micon{width:34px;height:34px;border-radius:9px; background:var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .menu-account-row .mtext{flex:1; font-weight:600; font-size:14px;}
+  .cover-wrap{position:relative; width:100%; aspect-ratio:16/9; background:linear-gradient(135deg,var(--navy),#39406b); overflow:hidden;}
+  .cover-wrap img{width:100%;height:100%;object-fit:cover;}
+  .cover-cam{position:absolute; top:12px; right:12px; width:34px;height:34px;border-radius:50%; background:rgba(0,0,0,.45); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .profile-head-row{padding:0 18px; margin-top:-42px; display:flex; align-items:flex-end; justify-content:space-between;}
+  .big-avatar-wrap{position:relative; width:88px;height:88px; border-radius:50%; border:4px solid var(--surface); background:var(--navy); flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--font-display); font-size:30px; font-weight:600;}
+  .big-avatar-wrap img{width:100%;height:100%;object-fit:cover;}
+  .avatar-cam{position:absolute; bottom:0; right:0; width:26px;height:26px;border-radius:50%; background:rgba(0,0,0,.55); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .profile-head-actions{display:flex; gap:8px; padding-bottom:6px;}
+  .btn-blue{background:#3897F0; color:#fff; border:none; border-radius:10px; padding:9px 16px; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--font-body);}
+  .icon-round{width:38px;height:38px;border-radius:50%; background:var(--paper); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink); flex-shrink:0;}
+  .profile-namerow{padding:14px 18px 0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .profile-namerow .pname{font-family:var(--font-display); font-weight:700; font-size:19px;}
+  .profile-handle{padding:2px 18px 0; color:var(--ink-soft); font-size:13px;}
+  .badge-row{display:flex; gap:8px; padding:10px 18px 0; flex-wrap:wrap;}
+  .coin-badge{display:flex; align-items:center; gap:5px; background:var(--red-soft); color:var(--red); font-weight:700; font-size:12.5px; padding:6px 12px; border-radius:100px;}
+  .rank-badge{background:#3897F0; color:#fff; font-weight:700; font-size:12.5px; padding:6px 14px; border-radius:100px;}
+  .fresh-badge{display:flex; align-items:center; gap:5px; background:var(--paper); border:1px solid var(--line); color:var(--ink-soft); font-weight:600; font-size:12px; padding:6px 12px; border-radius:100px;}
+  .profile-bio-line{padding:12px 18px 0; font-size:13.5px; line-height:1.5; color:var(--ink);}
+  .info-row{display:flex; align-items:center; gap:10px; padding:8px 18px; font-size:13px; color:var(--ink-soft);}
+  .info-row svg{width:16px;height:16px; flex-shrink:0;}
+  .info-row a{color:#3897F0; font-weight:600; text-decoration:none; word-break:break-all;}
+  .profile-stats-row{display:flex; padding:16px 18px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-top:14px;}
+  .profile-stats-row .stat{flex:1;}
+  .list-row{display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--line);}
+  .list-row .name{font-weight:600; font-size:14px;}
+  .quest-row{padding:12px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px;}
+  .notif-section{margin:0 18px 16px; background:var(--paper); border-radius:16px; padding:16px; border:1px solid var(--line);}
+  .notif-cat{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  .notif-cat .nicon{width:34px;height:34px;border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;}
+  .notif-cat .ntitle{font-weight:700; font-size:14.5px;}
+  .notif-toggle-row{display:flex; align-items:center; gap:10px; padding:8px 0 8px 46px; justify-content:space-between;}
+  .notif-toggle-row .nlabel{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft);}
+  .notif-toggle-row .nlabel svg{width:15px;height:15px;}
+  .balance-card{margin:16px 18px 0; background:linear-gradient(135deg,#FF9A3C,#FF5C1F); border-radius:18px; padding:20px; color:#fff;}
+  .balance-card .lvl{background:rgba(255,255,255,.25); font-size:12px; font-weight:700; padding:6px 12px; border-radius:100px; display:inline-flex; align-items:center; gap:5px; float:right;}
+  .balance-card .bignum{font-size:34px; font-weight:800; font-family:var(--font-display); display:flex; align-items:center; gap:8px;}
+  .balance-card .sub{font-size:12px; opacity:.85; margin-top:2px;}
+  .balance-card .prog-wrap{margin-top:14px; font-size:11.5px; opacity:.9; display:flex; justify-content:space-between;}
+  .balance-card .prog-bar{height:7px; background:rgba(255,255,255,.3); border-radius:100px; margin-top:6px; overflow:hidden;}
+  .balance-card .prog-fill{height:100%; background:#fff; border-radius:100px;}
+  .quest-card{margin:16px 18px 0; border:1px solid var(--line); border-radius:16px; padding:16px;}
+  .quest-card-head{display:flex; align-items:center; gap:12px;}
+  .quest-card-head .qicon{width:38px;height:38px;border-radius:50%; background:var(--red-soft); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;}
+  .quest-card-head b{font-size:14.5px;}
+  .quest-card-head .qsub{font-size:11.5px; color:var(--ink-soft);}
+  .shield-row{display:flex; gap:10px; margin-top:12px;}
+  .shield-btn{flex:1; background:var(--paper); border:1px solid var(--line); border-radius:100px; padding:9px; font-size:12.5px; font-weight:700; color:#3897F0; cursor:pointer; font-family:var(--font-body);}
+  .ad-btn{width:100%; margin-top:12px; background:#7C5CFF; color:#fff; border:none; border-radius:100px; padding:14px; font-weight:700; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;}
+  .shop-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0;}
+  .shop-row .stitle{font-size:13.5px; font-weight:700;}
+  .shop-row .ssub{font-size:11.5px; color:var(--ink-soft);}
+  .buy-btn{background:#7C5CFF; color:#fff; border:none; border-radius:100px; padding:9px 18px; font-weight:700; font-size:12.5px; cursor:pointer;}
+  .duration-tabs{display:flex; gap:8px; margin:10px 0;}
+  .duration-tab{flex:1; border:1px solid var(--line); background:none; border-radius:10px; padding:9px; font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer;}
+  .duration-tab.active{border-color:#7C5CFF; color:#7C5CFF;}
+  .lb-row{display:flex; align-items:center; padding:8px 0; gap:10px;}
+  .lb-row .rank{width:22px; font-size:12.5px; color:var(--ink-soft); font-weight:700;}
+  .lb-row .lbname{flex:1; font-size:13.5px; font-weight:600;}
+  .lb-row .lbexp{font-size:11px; color:var(--ink-soft);}
+  .lb-row .lbamt{font-size:13px; font-weight:700; color:#7C5CFF;}
+  .activity-row{margin:0 18px 10px; border:1px solid var(--line); border-radius:14px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center;}
+  .activity-row .atitle{font-weight:700; font-size:12.5px; letter-spacing:.02em;}
+  .activity-row .atime{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .activity-row .aamt{color:#FF5C1F; font-weight:700; font-size:14px;}
+  .invite-card{margin:16px 18px; background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:16px;}
+  .verify-progress-bar{height:8px; background:var(--paper); border-radius:100px; overflow:hidden; margin-top:8px;}
+  .verify-progress-fill{height:100%; background:#3897F0; border-radius:100px;}
+  .charcount{text-align:right; font-size:11px; color:var(--ink-soft); margin:-8px 18px 12px;}
+  .quest-check{width:22px;height:22px;border-radius:50%; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .quest-check.done{background:#3AD07A; border-color:#3AD07A; color:#fff;}
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); -webkit-font-smoothing:antialiased; overflow-x:hidden; transition:background .2s, color .2s;}
+  #app{max-width:480px; margin:0 auto; min-height:100%; background:var(--surface); display:flex; flex-direction:column; position:relative; border-left:1px solid var(--line); border-right:1px solid var(--line); box-shadow:var(--shadow);}
+
+  .topbar{position:sticky; top:env(safe-area-inset-top,0px); z-index:20; display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:var(--surface); border-bottom:1px solid var(--line);}
+  .logo{font-family:var(--font-display); font-weight:700; font-size:22px; letter-spacing:-0.02em;}
+  .logo .dot{color:var(--red);}
+  .topbar-icons{display:flex; gap:16px; align-items:center;}
+  .add-post-btn{display:flex; align-items:center; gap:5px; background:var(--red); color:#fff; border:none; border-radius:100px; padding:8px 14px 8px 10px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:var(--font-body);}
+  .add-post-btn svg{width:15px;height:15px;}
+  .feed-tabs{display:flex; gap:10px; padding:12px 18px; border-bottom:1px solid var(--line);}
+  .feed-tab{flex:1; background:var(--paper); border:1px solid var(--line); border-radius:100px; padding:10px; font-size:13px; font-weight:700; color:var(--ink-soft); cursor:pointer; font-family:var(--font-body);}
+  .feed-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .icon-btn{background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:var(--ink);position:relative;}
+  .icon-btn svg{width:23px;height:23px;}
+  .badge{position:absolute; top:-2px; right:-2px; background:var(--red); color:#fff; font-size:10px; font-weight:700; width:16px;height:16px;border-radius:50%; display:flex;align-items:center;justify-content:center;}
+
+  .screen{display:none; flex:1; flex-direction:column; padding-bottom:78px;}
+  .screen.active{display:flex;}
+
+  .stories{display:flex; gap:14px; padding:14px 18px; overflow-x:auto; border-bottom:1px solid var(--line);}
+  .story{display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0; width:60px;}
+  .story-ring{width:56px;height:56px;border-radius:50%; background:linear-gradient(135deg,var(--red),var(--gold)); padding:2.5px; display:flex; align-items:center; justify-content:center;}
+  .story-ring.seen{background:var(--line);}
+  .story-avatar{width:100%;height:100%;border-radius:50%;background:var(--navy); border:2px solid var(--surface); display:flex;align-items:center;justify-content:center; color:#fff; font-family:var(--font-display); font-weight:600; font-size:15px; overflow:hidden;}
+  .story-avatar img{width:100%;height:100%;object-fit:cover;}
+  .story span{font-size:11px; color:var(--ink-soft); max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  .post{border-bottom:1px solid var(--line); padding-bottom:12px;}
+  .post-head{display:flex; align-items:center; gap:10px; padding:12px 18px 8px;}
+  .avatar{width:38px;height:38px;border-radius:50%;background:var(--navy); display:flex;align-items:center;justify-content:center;color:#fff; font-family:var(--font-display); font-weight:600; font-size:14px; flex-shrink:0; overflow:hidden;}
+  .avatar img{width:100%;height:100%;object-fit:cover;}
+  .post-head-text{flex:1; min-width:0;}
+  .post-head-text .name{font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:.01em;}
+  .post-head-text .meta{font-size:12px; color:var(--ink-soft);}
+  .follow-chip{font-size:12px; font-weight:600; color:var(--red); background:none; border:1px solid var(--red); border-radius:100px; padding:5px 12px; cursor:pointer;}
+  .follow-chip.following{color:var(--ink-soft); border-color:var(--line);}
+  .more-btn{background:none;border:none;color:var(--ink-soft);cursor:pointer;padding:4px;}
+  .post-media{width:100%; aspect-ratio:1/1; background:linear-gradient(135deg,var(--navy),#39406b); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.5); font-family:var(--font-display); font-size:13px; margin-top:2px; overflow:hidden;}
+  .post-media img,.post-media video{width:100%;height:100%;object-fit:cover;}
+  .post-actions{display:flex; align-items:center; gap:16px; padding:10px 18px 2px;}
+  .action-btn{background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:var(--ink);}
+  .action-btn svg{width:24px;height:24px;}
+  .action-btn.liked svg{fill:var(--red); stroke:var(--red);}
+  .action-btn.saved svg{fill:var(--ink); stroke:var(--ink);}
+  .spacer{flex:1;}
+  .post-likes{padding:6px 18px 0; font-size:13px; font-weight:600;}
+  .post-caption{padding:6px 18px 0; font-size:13px; line-height:1.45;}
+  .post-caption b{font-weight:600;}
+  .post-comments-link{padding:6px 18px 0; font-size:13px; color:var(--ink-soft); cursor:pointer;}
+  .post-time{padding:6px 18px 0; font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em;}
+
+  .bottomnav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:var(--surface); border-top:1px solid var(--line); display:flex; justify-content:space-around; align-items:center; padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px)); z-index:30; box-shadow:0 -4px 20px -8px rgba(22,26,43,.08);}
+  .navbtn{background:none; border:none; cursor:pointer; padding:6px; color:var(--ink-soft); display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .navbtn span{font-size:10px; font-weight:600;}
+  .navbtn svg{width:24px;height:24px;}
+  .navbtn.active{color:var(--ink);}
+  .navbtn.upload{width:40px;height:40px; border-radius:12px; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center;}
+  .navbtn.upload svg{width:20px;height:20px;}
+
+  .screen-header{padding:16px 18px 10px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; background:var(--surface); position:sticky; top:env(safe-area-inset-top,0px); z-index:15;}
+  .screen-header h1{font-family:var(--font-display); font-size:19px; font-weight:600; margin:0; flex:1;}
+  .back-btn{background:none;border:none;cursor:pointer;color:var(--ink);display:flex;}
+  .back-btn svg{width:22px;height:22px;}
+
+  .search-box{padding:12px 18px;}
+  .search-input, .login-input{width:100%; background:var(--paper); border:1px solid var(--line); border-radius:11px; padding:11px 14px; font-size:14px; font-family:var(--font-body); color:var(--ink);}
+  .search-input:focus, .login-input:focus{outline:2px solid var(--ink); outline-offset:-1px;}
+  .result-row{display:flex; align-items:center; gap:12px; padding:10px 18px; cursor:pointer;}
+  .result-row .name{font-weight:600; font-size:14px;}
+  .result-row .meta{font-size:12px; color:var(--ink-soft);}
+  .section-label{padding:14px 18px 4px; font-size:12px; font-weight:600; color:var(--ink-soft);}
+  .empty-note{padding:24px 18px; color:var(--ink-soft); font-size:13px; text-align:center;}
+
+  .notif-row{display:flex; gap:12px; padding:12px 18px; align-items:center; border-bottom:1px solid var(--line);}
+  .notif-row.unread{background:var(--red-soft);}
+  .notif-text{font-size:13px; flex:1; line-height:1.4;}
+  .notif-text b{font-weight:600;}
+  .notif-time{font-size:11px; color:var(--ink-soft);}
+
+  .profile-top{padding:18px; display:flex; gap:18px; align-items:center;}
+  .profile-avatar{width:78px;height:78px;border-radius:50%; background:var(--navy); flex-shrink:0; display:flex;align-items:center;justify-content:center; color:#fff; font-family:var(--font-display); font-weight:600; font-size:26px; overflow:hidden;}
+  .profile-avatar img{width:100%;height:100%;object-fit:cover;}
+  .profile-stats{display:flex; flex:1; justify-content:space-around;}
+  .stat{text-align:center; background:none; border:none; cursor:pointer;}
+  .stat b{display:block; font-size:16px; font-family:var(--font-display); font-weight:600; color:var(--ink);}
+  .stat span{font-size:11px; color:var(--ink-soft);}
+  .profile-bio{padding:0 18px 14px;}
+  .profile-bio .name{font-weight:600; font-size:14px;}
+  .profile-bio p{margin:4px 0 0; font-size:13px; color:var(--ink-soft); line-height:1.4;}
+  .profile-actions{display:flex; gap:8px; padding:0 18px 16px;}
+  .btn-outline{flex:1; padding:9px; border-radius:10px; border:1px solid var(--line); background:none; font-weight:600; font-size:13px; color:var(--ink); cursor:pointer;}
+  .btn-solid{flex:1; padding:9px; border-radius:10px; border:none; background:var(--ink); font-weight:600; font-size:13px; color:#fff; cursor:pointer;}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:2px; padding:2px;}
+  .grid-item{aspect-ratio:1/1; background:linear-gradient(135deg,var(--navy),#39406b); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.4); font-size:11px; overflow:hidden; cursor:pointer;}
+  .grid-item img,.grid-item video{width:100%;height:100%;object-fit:cover;}
+
+  .thread-row{display:flex; align-items:center; gap:12px; padding:12px 18px; cursor:pointer; border-bottom:1px solid var(--line);}
+  .thread-text{flex:1; min-width:0;}
+  .thread-text .name{font-weight:600; font-size:14px;}
+  .thread-text .preview{font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .thread-row.unread .preview{color:var(--ink); font-weight:600;}
+  .thread-time{font-size:11px; color:var(--ink-soft); align-self:flex-start; padding-top:2px;}
+
+  .chat-body{flex:1; padding:14px 18px; display:flex; flex-direction:column; gap:10px; overflow-y:auto;}
+  .bubble{max-width:75%; padding:9px 13px; border-radius:16px; font-size:13.5px; line-height:1.4;}
+  .bubble.them{background:var(--paper); align-self:flex-start; border-bottom-left-radius:4px;}
+  .bubble.me{background:var(--ink); color:#fff; align-self:flex-end; border-bottom-right-radius:4px;}
+  .chat-input-row{display:flex; gap:10px; padding:12px 18px; border-top:1px solid var(--line); align-items:center;}
+  .chat-input{flex:1; background:var(--paper); border:1px solid var(--line); border-radius:100px; padding:10px 16px; font-size:13.5px; font-family:var(--font-body); border-width:1px;}
+  .send-btn{background:var(--ink); border:none; width:38px;height:38px;border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;}
+  .send-btn svg{width:17px;height:17px;}
+
+  .upload-drop{margin:18px; border:1.5px dashed var(--line); border-radius:16px; padding:30px 20px; text-align:center; color:var(--ink-soft); font-size:13px; cursor:pointer; overflow:hidden;}
+  .upload-drop svg{width:34px;height:34px; margin-bottom:10px; color:var(--ink-soft);}
+  .upload-drop img,.upload-drop video{max-width:100%; max-height:220px; border-radius:10px;}
+  .field-label{padding:16px 18px 6px; font-size:12px; font-weight:600; color:var(--ink-soft);}
+  textarea.caption-input{margin:0 18px; width:calc(100% - 36px); min-height:70px; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-family:var(--font-body); font-size:13.5px; resize:none;}
+  .publish-btn{margin:22px 18px; padding:13px; border-radius:12px; border:none; background:var(--red); color:#fff; font-weight:700; font-size:14px; cursor:pointer; font-family:var(--font-body);}
+  .publish-btn:disabled{opacity:.5; cursor:not-allowed;}
+
+  .ai-intro{padding:22px 18px 8px;}
+  .ai-intro h2{font-family:var(--font-display); font-size:20px; margin:0 0 6px;}
+  .ai-intro p{color:var(--ink-soft); font-size:13px; margin:0; line-height:1.5;}
+  .ai-suggestions{display:flex; flex-wrap:wrap; gap:8px; padding:14px 18px;}
+  .ai-chip{background:var(--paper); border:1px solid var(--line); border-radius:100px; padding:8px 14px; font-size:12.5px; cursor:pointer; color:var(--ink);}
+
+  .login-wrap{flex:1; display:flex; flex-direction:column; justify-content:center; padding:36px 30px;}
+  .login-logo{font-family:var(--font-display); font-size:34px; font-weight:700; text-align:center; margin-bottom:6px;}
+  .login-tag{text-align:center; color:var(--ink-soft); font-size:13px; margin-bottom:32px;}
+  .login-input{margin-bottom:12px;}
+  .login-btn{width:100%; padding:13px; border-radius:11px; border:none; background:var(--ink); color:#fff; font-weight:700; font-size:14px; margin-top:6px; cursor:pointer;}
+  .login-switch{text-align:center; font-size:13px; color:var(--ink-soft); margin-top:18px;}
+  .login-switch b{color:var(--red); cursor:pointer;}
+  .login-error{color:var(--red); font-size:12.5px; text-align:center; margin-bottom:10px; min-height:16px;}
+
+  .admin-tabs{display:flex; gap:6px; padding:12px 18px; overflow-x:auto;}
+  .admin-tab{background:var(--paper); border:1px solid var(--line); border-radius:100px; padding:7px 14px; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; flex-shrink:0;}
+  .admin-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .stat-cards{display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:6px 18px 16px;}
+  .stat-card{border:1px solid var(--line); border-radius:14px; padding:14px;}
+  .stat-card b{display:block; font-family:var(--font-display); font-size:22px;}
+  .stat-card span{font-size:12px; color:var(--ink-soft);}
+  .admin-row{display:flex; align-items:center; gap:12px; padding:11px 18px; border-bottom:1px solid var(--line);}
+  .admin-row-text{flex:1; min-width:0;}
+  .admin-row-text .name{font-weight:600; font-size:13.5px;}
+  .admin-row-text .meta{font-size:11.5px; color:var(--ink-soft);}
+  .admin-flag{font-size:11px; font-weight:700; color:var(--red); background:var(--red-soft); padding:3px 8px; border-radius:100px; flex-shrink:0;}
+  .mini-btn{font-size:12px; font-weight:600; border:1px solid var(--line); background:none; border-radius:8px; padding:6px 10px; cursor:pointer; flex-shrink:0;}
+
+  .comment-row b{font-weight:600;}
+
+  .toggle-switch{width:44px; height:26px; border-radius:100px; background:var(--line); border:none; cursor:pointer; position:relative; flex-shrink:0; padding:0; transition:background .15s;}
+  .toggle-switch.on{background:var(--red);}
+  .toggle-switch::after{content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .15s; box-shadow:0 1px 2px rgba(0,0,0,.2);}
+  .toggle-switch.on::after{left:21px;}
+  .toast{position:fixed; bottom:96px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 18px; border-radius:100px; font-size:13px; font-weight:600; z-index:100; opacity:0; pointer-events:none; transition:opacity .2s;}
+  .toast.show{opacity:1;}
+
+  ::-webkit-scrollbar{display:none;}
+  *{scrollbar-width:none;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div id="app">
+
+  <!-- LOGIN / SIGNUP -->
+  <div class="screen active" id="screen-login">
+    <div class="login-wrap">
+      <div class="login-logo">frame<span style="color:var(--red)">o</span></div>
+      <div class="login-tag" id="auth-tag">share the moment, not just the photo</div>
+      <div class="login-error" id="auth-error"></div>
+      <input class="login-input" id="auth-name" placeholder="Full name" style="display:none;">
+      <input class="login-input" id="auth-username" placeholder="Username">
+      <input class="login-input" id="auth-password" type="password" placeholder="Password">
+      <button class="login-btn" id="auth-submit" onclick="submitLogin()">Log in</button>
+      <div class="login-switch" id="auth-switch">New here? <b onclick="toggleAuthMode()">Create an account</b></div>
+      <div class="login-switch" style="margin-top:6px;">Try a demo account: <b onclick="demoLogin()">ayeshak / demo</b></div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen" id="screen-home">
+    <div class="topbar">
+      <button class="add-post-btn" onclick="goTo('upload')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add Post</button>
+      <div class="logo">frame<span class="dot">o</span></div>
+      <div class="topbar-icons">
+        <button class="icon-btn" onclick="goTo('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></button>
+        <button class="icon-btn" onclick="goTo('notifications')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span class="badge" id="notif-badge" style="display:none;"></span></button>
+      </div>
+    </div>
+    <div class="stories" id="stories"></div>
+    <div class="feed-tabs">
+      <button class="feed-tab" id="feedtab-following" onclick="switchFeedTab('following')">Following</button>
+      <button class="feed-tab active" id="feedtab-latest" onclick="switchFeedTab('latest')">Latest</button>
+    </div>
+    <div id="feed"></div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="screen" id="screen-search">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Search</h1></div>
+    <div class="search-box"><input class="search-input" id="search-input" placeholder="Search people or posts" oninput="renderSearch(this.value)"></div>
+    <div class="admin-tabs" style="padding-top:0;">
+      <button class="admin-tab active" data-stab="people" onclick="switchSearchTab('people')">People</button>
+      <button class="admin-tab" data-stab="explore" onclick="switchSearchTab('explore')">Explore</button>
+    </div>
+    <div id="search-people-panel">
+      <div class="section-label" id="search-label">Suggested for you</div>
+      <div id="search-results"></div>
+    </div>
+    <div class="grid" id="explore-grid" style="display:none;"></div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="screen" id="screen-notifications">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Notifications</h1></div>
+    <div id="notif-list"></div>
+  </div>
+
+  <!-- MESSAGES LIST -->
+  <div class="screen" id="screen-messages">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Messages</h1></div>
+    <div id="thread-list"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="screen" id="screen-chat">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1 id="chat-name">Chat</h1></div>
+    <div class="chat-body" id="chat-body"></div>
+    <div class="chat-input-row"><input class="chat-input" id="chat-input" placeholder="Message..." onkeydown="if(event.key==='Enter')sendChat()"><button class="send-btn" onclick="sendChat()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+  </div>
+
+  <!-- COMMENTS -->
+  <div class="screen" id="screen-comments">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Comments</h1></div>
+    <div id="comments-list" style="flex:1; overflow-y:auto;"></div>
+    <div class="chat-input-row"><input class="chat-input" id="comment-input" placeholder="Add a comment..." onkeydown="if(event.key==='Enter')submitComment()"><button class="send-btn" onclick="submitComment()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div class="screen" id="screen-upload">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>New post</h1></div>
+    <label class="upload-drop" id="upload-drop" for="file-input">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-9 9"/></svg>
+      <div id="upload-label">Tap to choose a photo or video</div>
+    </label>
+    <input type="file" id="file-input" accept="image/*,video/*" style="display:none;" onchange="handleFile(event)">
+    <div class="field-label">Caption</div>
+    <textarea class="caption-input" id="caption-input" placeholder="Write a caption... or ask the AI assistant to draft one"></textarea>
+    <button class="ai-chip" style="margin:12px 18px 0; align-self:flex-start;" onclick="goTo('ai')">✨ Get caption ideas from AI</button>
+    <button class="publish-btn" id="publish-btn" onclick="submitPost()">Share post</button>
+  </div>
+
+  <!-- AI ASSISTANT -->
+  <div class="screen" id="screen-ai">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>AI Assistant</h1></div>
+    <div class="ai-intro"><h2>Ask me anything ✨</h2><p>Caption ideas, hashtag help, or questions about how Frameo works — I'm built into the app for exactly this.</p></div>
+    <div class="ai-suggestions">
+      <button class="ai-chip" onclick="askAI('Write a caption for a sunset photo')">Caption for a sunset photo</button>
+      <button class="ai-chip" onclick="askAI('Suggest hashtags for travel posts')">Hashtags for travel posts</button>
+      <button class="ai-chip" onclick="askAI('How do I make my account private?')">Make my account private</button>
+    </div>
+    <div class="chat-body" id="ai-body" style="flex:1;"></div>
+    <div class="chat-input-row"><input class="chat-input" id="ai-input" placeholder="Ask the assistant..." onkeydown="if(event.key==='Enter')sendAI()"><button class="send-btn" onclick="sendAI()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+  </div>
+
+  <!-- PROFILE (own or other's, driven by viewingProfile var) -->
+  <div class="screen" id="screen-profile">
+    <div class="screen-header" style="position:absolute; top:0; left:0; right:0; z-index:20; background:none; border:none;">
+      <button class="back-btn" id="profile-back" style="display:none; background:rgba(0,0,0,.4); border-radius:50%; padding:6px; color:#fff;" onclick="goTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <h1 style="display:none;">profile</h1>
+      <div style="flex:1;"></div>
+      <button class="icon-btn" id="profile-admin-btn" onclick="goTo('admin')" title="Admin dashboard" style="background:rgba(0,0,0,.4); border-radius:50%; color:#fff;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+    </div>
+    <div style="flex:1; overflow-y:auto;">
+      <div class="cover-wrap" id="profile-cover"></div>
+      <div class="profile-head-row">
+        <div class="big-avatar-wrap" id="profile-avatar">Y</div>
+        <div class="profile-head-actions" id="profile-actions"></div>
+      </div>
+      <div class="profile-namerow"><div class="pname" id="profile-name">Your Name</div><span id="profile-verified-badge"></span><button class="btn-blue" id="get-verified-btn" style="display:none; padding:6px 14px; font-size:12px;" onclick="goTo('verification')">Get Verified</button></div>
+      <div class="profile-handle" id="profile-handle">@you</div>
+      <div class="badge-row" id="profile-badges"></div>
+      <p class="profile-bio-line" id="profile-bio-text">—</p>
+      <div id="profile-info-rows"></div>
+      <div class="empty-note" id="private-lock-note" style="display:none;">🔒 This account is private. Follow to see their photos and videos.</div>
+      <div class="profile-stats-row" id="profile-stats-row" style="display:none;">
+        <div class="stat"><b id="stat-followers">0</b><span>Followers</span></div>
+        <div class="stat"><b id="stat-following">0</b><span>Following</span></div>
+        <div class="stat"><b id="stat-posts">0</b><span>Posts</span></div>
+        <div class="stat"><b id="stat-likes">0</b><span>Likes</span></div>
+      </div>
+      <div class="grid" id="profile-grid"></div>
+    </div>
+  </div>
+
+  <!-- EDIT PROFILE -->
+  <div class="screen" id="screen-editprofile">
+    <div class="screen-header"><button class="back-btn" onclick="viewProfile(currentUser)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Edit profile</h1></div>
+    <div style="flex:1; overflow-y:auto;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:24px 18px 8px;">
+        <div class="profile-avatar" id="edit-avatar-preview" style="width:88px;height:88px;font-size:30px;"></div>
+        <label class="ai-chip" for="avatar-file-input" style="display:inline-block;">Change photo</label>
+        <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">
+      </div>
+      <div class="field-label">Name</div>
+      <input class="login-input" style="margin:0 18px 12px; width:calc(100% - 36px);" id="edit-name">
+      <div class="field-label">Username</div>
+      <input class="login-input" style="margin:0 18px 12px; width:calc(100% - 36px);" id="edit-username">
+      <div class="field-label">Bio</div>
+      <textarea class="caption-input" id="edit-bio" style="min-height:60px;"></textarea>
+      <div class="field-label">Job title</div>
+      <input class="login-input" style="margin:0 18px 12px; width:calc(100% - 36px);" id="edit-job" placeholder="e.g. Photographer">
+      <div class="field-label">Gender</div>
+      <select class="login-input" style="margin:0 18px 12px; width:calc(100% - 36px);" id="edit-gender">
+        <option value="">Prefer not to say</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+      <div class="field-label">Age</div>
+      <input class="login-input" type="number" min="13" max="120" style="margin:0 18px 12px; width:calc(100% - 36px);" id="edit-age">
+      <div class="field-label">Location</div>
+      <input class="login-input" style="margin:0 18px 12px; width:calc(100% - 36px);" id="edit-location" placeholder="City, Country">
+      <div class="field-label">Website</div>
+      <input class="login-input" style="margin:0 18px 12px; width:calc(100% - 36px);" id="edit-website" placeholder="https://...">
+      <div class="login-error" id="edit-error" style="margin-top:10px;"></div>
+      <button class="publish-btn" onclick="saveEditProfile()">Save changes</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="screen-header"><button class="back-btn" onclick="viewProfile(currentUser)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Settings</h1></div>
+    <div style="flex:1; overflow-y:auto;">
+      <div class="section-label">Account</div>
+      <div class="admin-row"><div class="admin-row-text"><div class="name">Edit profile</div><div class="meta">Name, username, bio, photo</div></div><button class="mini-btn" onclick="openEditProfile()">Edit</button></div>
+      <div class="admin-row"><div class="admin-row-text"><div class="name">Insights</div><div class="meta">Views, likes and engagement on your posts</div></div><button class="mini-btn" onclick="goTo('insights')">View</button></div>
+      <div class="admin-row"><div class="admin-row-text"><div class="name">Archived posts</div><div class="meta">Posts only you can see</div></div><button class="mini-btn" onclick="goTo('archived')">View</button></div>
+      <div class="admin-row"><div class="admin-row-text"><div class="name">Private account</div><div class="meta">Only followers can see your posts</div></div><button class="toggle-switch" id="private-toggle-btn" onclick="togglePrivateAccount()"></button></div>
+      <div class="admin-row"><div class="admin-row-text"><div class="name">Dark mode</div><div class="meta">Switch the app to a dark theme</div></div><button class="toggle-switch" id="dark-toggle-btn" onclick="toggleDarkMode()"></button></div>
+
+      <div class="section-label">Notifications</div>
+      <div class="admin-row"><div class="admin-row-text"><div class="name">Notification settings</div><div class="meta">Reactions, comments, followers, messages and more</div></div><button class="mini-btn" onclick="goTo('notifsettings')">Open</button></div>
+
+      <div class="section-label">Password</div>
+      <input class="login-input" style="margin:0 18px 10px; width:calc(100% - 36px);" id="settings-current-pass" type="password" placeholder="Current password">
+      <input class="login-input" style="margin:0 18px 10px; width:calc(100% - 36px);" id="settings-new-pass" type="password" placeholder="New password">
+      <div class="login-error" id="settings-pass-error"></div>
+      <button class="publish-btn" style="background:var(--ink);" onclick="changePassword()">Update password</button>
+
+      <div class="section-label">Danger zone</div>
+      <button class="publish-btn" style="margin-top:8px;" onclick="deleteAccount()">Delete account</button>
+      <button class="btn-outline" style="margin:10px 18px 24px; width:calc(100% - 36px);" onclick="resetAppData()">Reset app data (fixes glitches)</button>
+    </div>
+  </div>
+
+  <!-- STORY VIEWER -->
+  <div class="screen" id="screen-storyviewer" style="background:#000;">
+    <div class="progress-row" id="story-progress"></div>
+    <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; position:relative; z-index:2;">
+      <div class="avatar" id="story-avatar" style="border:1.5px solid rgba(255,255,255,.6);"></div>
+      <div style="flex:1; color:#fff; font-weight:600; font-size:13.5px;" id="story-name"></div>
+      <button class="icon-btn" style="color:#fff;" onclick="closeStory()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div style="flex:1; display:flex; align-items:center; justify-content:center; position:relative;">
+      <div id="story-content" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--font-display); font-size:15px; text-align:center; padding:30px;"></div>
+      <div style="position:absolute; inset:0; display:flex;">
+        <div style="flex:1; cursor:pointer;" onclick="prevStory()"></div>
+        <div style="flex:1; cursor:pointer;" onclick="nextStory()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVED POSTS -->
+  <div class="screen" id="screen-saved">
+    <div class="screen-header"><button class="back-btn" onclick="viewProfile(currentUser)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Saved</h1></div>
+    <div class="grid" id="saved-grid"></div>
+  </div>
+
+  <!-- ARCHIVED POSTS -->
+  <div class="screen" id="screen-archived">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Archived posts</h1></div>
+    <div class="grid" id="archived-grid"></div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="screen" id="screen-insights">
+    <div class="screen-header"><button class="back-btn" onclick="viewProfile(currentUser)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Insights</h1></div>
+    <div style="flex:1; overflow-y:auto;" id="insights-body"></div>
+  </div>
+
+  <!-- POST ANALYTICS -->
+  <div class="screen" id="screen-postanalytics">
+    <div class="screen-header"><button class="back-btn" onclick="goTo(analyticsReturnScreen||'home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Post Analytics</h1></div>
+    <div style="flex:1; overflow-y:auto;">
+      <div style="padding:16px 18px 6px; display:flex; align-items:center; gap:8px;">
+        <div class="reaction-pile"><span style="background:#3AD07A;">✅</span><span style="background:#FF7A2E;">🔥</span><span style="background:#fff;">❤️</span></div>
+        <span style="font-size:13px; color:var(--ink-soft);" id="pa-reaction-total"></span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 18px 8px;">
+        <div style="font-weight:700; font-size:17px; font-family:var(--font-display);">Statistics</div>
+        <div style="font-size:12.5px; color:var(--ink-soft);">All time</div>
+      </div>
+      <div class="stat-cards" id="pa-stats"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:22px 18px 4px;">
+        <div style="font-weight:700; font-size:17px; font-family:var(--font-display);">Reach</div>
+        <div style="font-size:12.5px; color:var(--ink-soft);">Last 30 days</div>
+      </div>
+      <div class="analytics-tabs">
+        <button class="analytics-tab" data-atab="impressions" onclick="switchAnalyticsTab('impressions')">Impressions</button>
+        <button class="analytics-tab active" data-atab="engagement" onclick="switchAnalyticsTab('engagement')">Engagement</button>
+      </div>
+      <div style="padding:18px;">
+        <svg id="pa-chart" viewBox="0 0 320 180" style="width:100%; height:auto; overflow:visible;"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="screen" id="screen-menu">
+    <div class="screen-header"><h1>Menu</h1></div>
+    <div style="flex:1; overflow-y:auto;">
+      <div class="menu-profile-card" onclick="viewProfile(currentUser)">
+        <div class="avatar" id="menu-avatar"></div>
+        <div>
+          <div class="mname" id="menu-name"></div>
+          <div class="mmeta" id="menu-followers"></div>
+          <span class="mlink">View your profile →</span>
+        </div>
+      </div>
+      <div class="section-label" style="padding-top:0;">Referral link</div>
+      <button class="referral-btn" onclick="copyReferralLink()">Copy link<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+      <div class="section-label" style="padding-top:0;">Most Used</div>
+      <div class="menu-grid">
+        <button class="menu-tile" onclick="goTo('saved')"><div class="menu-tile-icon" style="background:#2E2A55; color:#9C8CFF;">🔖</div><span>Saved</span></button>
+        <button class="menu-tile" onclick="goTo('followerslist')"><div class="menu-tile-icon" style="background:#1E3A5F; color:#5CA9FF;">👥</div><span>Followers</span></button>
+        <button class="menu-tile" onclick="goTo('videos')"><div class="menu-tile-icon" style="background:#4A1E33; color:#FF6FA5;">🎬</div><span>Videos</span></button>
+        <button class="menu-tile" onclick="goTo('insights')"><div class="menu-tile-icon" style="background:#1E3D33; color:#3AD07A;">📊</div><span>Analytics</span></button>
+        <button class="menu-tile" onclick="goTo('leaderboard')"><div class="menu-tile-icon" style="background:#4A3313; color:#F2A93B;">🏆</div><span>LeaderBoard</span></button>
+        <button class="menu-tile" onclick="goTo('streaks')"><div class="menu-tile-icon" style="background:#4A1E1E; color:#FF6B5C;">🔥</div><span>Streaks</span></button>
+        <button class="menu-tile" onclick="goTo('blockedlist')"><div class="menu-tile-icon" style="background:#4A1E24; color:#FF5C7A;">🚫</div><span>Blocked</span></button>
+        <button class="menu-tile" onclick="goTo('quests')"><div class="menu-tile-icon" style="background:#4A3313; color:#F2C23B;">🪙</div><span>Coins & Quests</span></button>
+        <button class="menu-tile" onclick="goTo('ai')"><div class="menu-tile-icon" style="background:#1E2A4A; color:#5C8CFF;">✨</div><span>AI Assistant</span></button>
+      </div>
+      <div class="section-label" style="padding-top:6px;">Account</div>
+      <div class="menu-account-row" onclick="goTo('settings')"><div class="micon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div><div class="mtext">Settings & Privacy</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" onclick="goTo('admin')"><div class="micon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><div class="mtext">Admin dashboard</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" onclick="goTo('contactus')"><div class="micon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"/><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 6l10 7 10-7"/></svg></div><div class="mtext">Contact Us</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" onclick="openSwitchAccountSheet()"><div class="micon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div><div class="mtext">Switch Account</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" onclick="goTo('verification')"><div class="micon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 1.2 2.6-.6 1.3 2.3 2.3 1.3-.6 2.6L21.2 11l-1.2 2.4.6 2.6-2.3 1.3-1.3 2.3-2.6-.6L12 21.2l-2.4-1.2-2.6.6-1.3-2.3-2.3-1.3.6-2.6L2.8 11l1.2-2.4-.6-2.6 2.3-1.3 1.3-2.3 2.6.6z"/><path d="M9 12l2 2 4-4"/></svg></div><div class="mtext">Blue Tick Verification</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" onclick="goTo('referrals')"><div class="micon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg></div><div class="mtext">Referrals</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" onclick="checkAppUpdate()"><div class="micon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 8v6M9 11l3 3 3-3"/></svg></div><div class="mtext">App Update</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" onclick="rateUs()"><div class="micon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2l-5-4.9 6.9-1z"/></svg></div><div class="mtext">Rate Us</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" style="background:var(--red-soft);" onclick="confirmLogOut()"><div class="micon" style="background:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></div><div class="mtext" style="color:var(--red);">Log Out</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="menu-account-row" style="background:var(--red-soft);" onclick="deleteAccount()"><div class="micon" style="background:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 4h4"/><path d="M12 4v0" stroke-width="4"/></svg></div><div class="mtext" style="color:var(--red);">Delete My Account</div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div class="section-label" style="padding-top:6px;">Invite</div>
+      <div class="invite-card">
+        <div style="font-weight:700; font-size:16px; font-family:var(--font-display);">Invite Friends</div>
+        <div style="font-size:12.5px; color:var(--ink-soft); margin:4px 0 14px;">Help your friends discover Frameo</div>
+        <button class="ad-btn" style="background:#25D366;" onclick="shareOnWhatsApp()"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.1-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.2-.4.1-.2 0-.3 0-.5-.1-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2.1 3.2 5 4.4.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.2-.6-.4z"/><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.5A10 10 0 1012 2z"/></svg>Share on WhatsApp</button>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+  <!-- REELS -->
+  <div class="screen" id="screen-reels">
+    <div class="screen-header"><h1>Reels</h1></div>
+    <div id="reels-list" style="flex:1; overflow-y:auto;"></div>
+  </div>
+
+  <!-- FOLLOWERS LIST -->
+  <div class="screen" id="screen-followerslist">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Followers</h1></div>
+    <div id="followers-list-body" style="flex:1; overflow-y:auto;"></div>
+  </div>
+
+  <!-- BLOCKED LIST -->
+  <div class="screen" id="screen-blockedlist">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>My Block List</h1></div>
+    <div id="blocked-list-body" style="flex:1; overflow-y:auto;"></div>
+  </div>
+
+  <!-- VIDEOS -->
+  <div class="screen" id="screen-videos">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Your videos</h1></div>
+    <div class="grid" id="videos-grid"></div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="screen" id="screen-leaderboard">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>LeaderBoard</h1></div>
+    <div id="leaderboard-body" style="flex:1; overflow-y:auto;"></div>
+  </div>
+
+  <!-- STREAKS -->
+  <div class="screen" id="screen-streaks">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Streaks</h1></div>
+    <div id="streaks-body" style="flex:1; overflow-y:auto; padding:24px 18px;"></div>
+  </div>
+
+  <!-- COINS & QUESTS -->
+  <div class="screen" id="screen-quests">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Coins & Quests</h1></div>
+    <div id="quests-body" style="flex:1; overflow-y:auto;"></div>
+  </div>
+
+  <!-- NOTIFICATION SETTINGS -->
+  <div class="screen" id="screen-notifsettings">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Notification settings</h1></div>
+    <div style="flex:1; overflow-y:auto; padding-top:12px;" id="notifsettings-body"></div>
+  </div>
+
+  <!-- VERIFICATION -->
+  <div class="screen" id="screen-verification">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Verification</h1></div>
+    <div style="flex:1; overflow-y:auto; padding:36px 18px 18px; text-align:center;" id="verification-body"></div>
+  </div>
+
+  <!-- REFERRALS -->
+  <div class="screen" id="screen-referrals">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Referrals</h1></div>
+    <div style="flex:1; overflow-y:auto;" id="referrals-body"></div>
+  </div>
+
+  <!-- CONTACT US -->
+  <div class="screen" id="screen-contactus">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Contact Us</h1></div>
+    <div style="flex:1; overflow-y:auto; padding:18px;">
+      <div style="font-weight:700; font-size:19px; color:#3897F0; font-family:var(--font-display); margin-bottom:14px;">How can we help you?</div>
+      <input class="login-input" id="contact-title" placeholder="Title" style="margin-bottom:12px;">
+      <textarea class="caption-input" id="contact-body" maxlength="200" style="margin:0 0 4px; width:100%; min-height:150px;" placeholder="Write your Suggestions or Problem (0/200)" oninput="document.getElementById('contact-count').textContent=this.value.length+'/200'"></textarea>
+      <div style="text-align:right; font-size:11px; color:var(--ink-soft); margin-bottom:20px;"><span id="contact-count">0/200</span></div>
+      <button class="login-btn" onclick="submitContactForm()">Submit</button>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="screen" id="screen-admin">
+    <div class="screen-header"><button class="back-btn" onclick="goTo('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>Admin dashboard</h1></div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="overview" onclick="adminTab('overview')">Overview</button>
+      <button class="admin-tab" data-tab="reports" onclick="adminTab('reports')">Reports</button>
+      <button class="admin-tab" data-tab="users" onclick="adminTab('users')">Users</button>
+    </div>
+    <div id="admin-content" style="flex:1; overflow-y:auto;"></div>
+  </div>
+
+  <div class="bottomnav" id="bottomnav" style="display:none;">
+    <button class="navbtn active" data-screen="home" onclick="goTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span>Home</span></button>
+    <button class="navbtn" data-screen="reels" onclick="goTo('reels')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 8l7 4-7 4z"/></svg><span>Reels</span></button>
+    <button class="navbtn" data-screen="search" onclick="goTo('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span>Search</span></button>
+    <button class="navbtn" data-screen="menu" onclick="goTo('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg><span>Menu</span></button>
+    <button class="navbtn" data-screen="profile" onclick="viewProfile(currentUser)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/></svg><span>Profile</span></button>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sheet-overlay" onclick="if(event.target===this) closeSheet()">
+  <div class="sheet" id="action-sheet"></div>
+</div>
+
+<div class="sheet-overlay" id="ad-overlay" style="align-items:center; background:rgba(0,0,0,.85);">
+  <div style="width:88%; max-width:380px; background:#15161F; border-radius:20px; padding:28px 22px; text-align:center; color:#fff;">
+    <div style="font-size:11px; letter-spacing:.08em; color:#9498AC; font-weight:700; margin-bottom:18px;">ADVERTISEMENT</div>
+    <div id="ad-visual" style="width:100%; aspect-ratio:16/10; border-radius:14px; background:linear-gradient(135deg,#7C5CFF,#3897F0); display:flex; align-items:center; justify-content:center; margin-bottom:18px; position:relative; overflow:hidden;">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" opacity=".9"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-9 9"/></svg>
+    </div>
+    <div id="ad-status" style="font-size:14px; font-weight:600; margin-bottom:6px;">Your video starts in <span id="ad-countdown">5</span>s</div>
+    <div style="height:6px; background:rgba(255,255,255,.15); border-radius:100px; overflow:hidden; margin-bottom:22px;"><div id="ad-progress" style="height:100%; width:0%; background:#7C5CFF; border-radius:100px; transition:width 1s linear;"></div></div>
+    <button class="login-btn" id="ad-claim-btn" style="display:none;" onclick="finishAdReward()">Claim +50 coins</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- storage helpers ---------------- */
+function load(key, fallback){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } }
+function save(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); return true; }
+  catch(e){ toast('Storage full — try a smaller photo, or use "Reset app data" in Settings'); return false; }
+}
+function compressImage(dataUrl, maxDim, quality){
+  return new Promise(resolve=>{
+    try{
+      const img = new Image();
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w>=h){ if(w>maxDim){ h = Math.round(h*maxDim/w); w = maxDim; } }
+        else { if(h>maxDim){ w = Math.round(w*maxDim/h); h = maxDim; } }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>resolve(dataUrl);
+      img.src = dataUrl;
+    }catch(e){ resolve(dataUrl); }
+  });
+}
+
+const heartIcon = f => `<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>`;
+const commentIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>`;
+const shareIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>`;
+const saveIcon = f => `<svg viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>`;
+const moreIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>`;
+const verifiedIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 1.2 2.6-.6 1.3 2.3 2.3 1.3-.6 2.6L21.2 11l-1.2 2.4.6 2.6-2.3 1.3-1.3 2.3-2.6-.6L12 21.2l-2.4-1.2-2.6.6-1.3-2.3-2.3-1.3.6-2.6L2.8 11l1.2-2.4-.6-2.6 2.3-1.3 1.3-2.3 2.6.6z"/><path d="M9 12l2 2 4-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function timeAgo(ts){
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s<60) return 'just now';
+  if(s<3600) return Math.floor(s/60)+'m ago';
+  if(s<86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+/* ---------------- seed data ---------------- */
+function ensureGamificationFields(usr){
+  if(usr.coinBalance===undefined) usr.coinBalance=100;
+  if(usr.coinLifetime===undefined) usr.coinLifetime=100;
+  if(!Array.isArray(usr.coinLog)) usr.coinLog=[];
+  if(!usr.streak) usr.streak={count:0,best:0,lastActiveDate:null,shields:0};
+  if(!usr.questProgress) usr.questProgress={date:null, opened:false, likesGiven:0, commentsGiven:0, followsGiven:0, claimed:{}};
+  if(usr.profileBoostUntil===undefined) usr.profileBoostUntil=0;
+  if(usr.leaderboardBid===undefined) usr.leaderboardBid=null;
+  if(!Array.isArray(usr.referralsList)) usr.referralsList=[];
+}
+function seed(){
+  if(load('frameo_users', null)) return;
+  const now2 = Date.now();
+  const users = [
+    {username:'ayeshak', name:'Ayesha Khan', password:'demo', bio:'Golden hour chaser 🌅 | Karachi', avatar:null, cover:null, followers:['bilal.a'], following:[], private:false, notifyLikes:true, notifyComments:true, notifyFollows:true, notif:{postReactions:{alerts:true,sound:true},comments:{alerts:true,sound:true},commentReactions:{alerts:true,sound:true},mentions:{alerts:true,sound:true},followers:{alerts:true,sound:true},tags:{alerts:true,sound:true},directMessages:{alerts:true,sound:true}}, verified:true, verificationRequested:false, blocked:[], muted:[], job:'Photographer', gender:'Female', age:26, location:'Karachi, Pakistan', website:'', joinedAt: now2-200*86400000, coinsBalance:3055, lifetimeCoins:3355, shields:0, adsToday:{date:'',count:0}, questClaims:{}, inviteClaimed:false, profileBoostUntil:0, activityLog:[]},
+    {username:'bilal.a', name:'Bilal Ahmed', password:'demo', bio:'Code, coffee, repeat ⚙️', avatar:null, cover:null, followers:[], following:['ayeshak'], private:false, notifyLikes:true, notifyComments:true, notifyFollows:true, notif:{postReactions:{alerts:true,sound:true},comments:{alerts:true,sound:true},commentReactions:{alerts:true,sound:true},mentions:{alerts:true,sound:true},followers:{alerts:true,sound:true},tags:{alerts:true,sound:true},directMessages:{alerts:true,sound:true}}, verified:false, verificationRequested:false, blocked:[], muted:[], job:'Software Engineer', gender:'Male', age:28, location:'Lahore, Pakistan', website:'', joinedAt: now2-120*86400000},
+    {username:'sara.m', name:'Sara Malik', password:'demo', bio:'Food first, everything else after 🍛', avatar:null, cover:null, followers:[], following:[], private:true, notifyLikes:true, notifyComments:true, notifyFollows:true, notif:{postReactions:{alerts:true,sound:true},comments:{alerts:true,sound:true},commentReactions:{alerts:true,sound:true},mentions:{alerts:true,sound:true},followers:{alerts:true,sound:true},tags:{alerts:true,sound:true},directMessages:{alerts:true,sound:true}}, verified:false, verificationRequested:false, blocked:[], muted:[], job:'', gender:'Female', age:24, location:'Islamabad, Pakistan', website:'', joinedAt: now2-60*86400000},
+    {username:'zainraza', name:'Zain Raza', password:'demo', bio:'Muralist & sign painter 🎨', avatar:null, cover:null, followers:[], following:[], private:false, notifyLikes:true, notifyComments:true, notifyFollows:true, notif:{postReactions:{alerts:true,sound:true},comments:{alerts:true,sound:true},commentReactions:{alerts:true,sound:true},mentions:{alerts:true,sound:true},followers:{alerts:true,sound:true},tags:{alerts:true,sound:true},directMessages:{alerts:true,sound:true}}, verified:true, verificationRequested:false, blocked:[], muted:[], job:'Artist', gender:'Male', age:30, location:'Karachi, Pakistan', website:'', joinedAt: now2-400*86400000},
+    {username:'hinaf', name:'Hina Farooq', password:'demo', bio:'Just here for the vibes ✨', avatar:null, cover:null, followers:[], following:[], private:false, notifyLikes:true, notifyComments:true, notifyFollows:true, notif:{postReactions:{alerts:true,sound:true},comments:{alerts:true,sound:true},commentReactions:{alerts:true,sound:true},mentions:{alerts:true,sound:true},followers:{alerts:true,sound:true},tags:{alerts:true,sound:true},directMessages:{alerts:true,sound:true}}, verified:false, verificationRequested:false, blocked:[], muted:[], job:'', gender:'', age:null, location:'', website:'', joinedAt: now2-10*86400000},
+  ];
+  users.forEach(ensureGamificationFields);
+  save('frameo_users', users);
+  const now = Date.now();
+  const posts = [
+    {id:1, author:'ayeshak', media:null, mediaType:'seed', caption:'Golden hour at the beach never disappoints 🌅 #sunset #beachvibes', likes:['bilal.a'], comments:[{author:'bilal.a', text:'Stunning!', likes:[]}], time: now-2*3600000, reported:false, savedBy:[], pinned:false, archived:false},
+    {id:2, author:'bilal.a', media:null, mediaType:'seed', caption:'New setup, same grind. Weekend coding session ⚙️ #dev', likes:[], comments:[], time: now-5*3600000, reported:false, savedBy:[], pinned:false, archived:false},
+    {id:3, author:'sara.m', media:null, mediaType:'seed', caption:'Karahi night with the whole crew 🍛 #foodie', likes:['ayeshak','zainraza'], comments:[{author:'ayeshak', text:'Save me a plate', likes:[]}], time: now-86400000, reported:true, savedBy:[], pinned:false, archived:false},
+    {id:4, author:'zainraza', media:null, mediaType:'seed', caption:'Finally finished the mural. 3 weeks well spent. #art #mural', likes:[], comments:[], time: now-2*86400000, reported:false, savedBy:[], pinned:false, archived:false},
+  ];
+  save('frameo_posts', posts);
+  save('frameo_next_id', 5);
+  save('frameo_notifications', {});
+  save('frameo_messages', {});
+}
+seed();
+
+/* migrate any pre-existing local data to the current schema so older sessions don't break */
+function migrateData(){
+  try{
+    const u = load('frameo_users', []);
+    let changed = false;
+    u.forEach(usr=>{
+      if(usr.private===undefined){ usr.private=false; changed=true; }
+      if(usr.notifyLikes===undefined){ usr.notifyLikes=true; changed=true; }
+      if(usr.notifyComments===undefined){ usr.notifyComments=true; changed=true; }
+      if(usr.notifyFollows===undefined){ usr.notifyFollows=true; changed=true; }
+      if(!usr.notif){ usr.notif={postReactions:{alerts:usr.notifyLikes!==false,sound:true},comments:{alerts:usr.notifyComments!==false,sound:true},commentReactions:{alerts:true,sound:true},mentions:{alerts:true,sound:true},followers:{alerts:usr.notifyFollows!==false,sound:true},tags:{alerts:true,sound:true},directMessages:{alerts:true,sound:true}}; changed=true; }
+      if(usr.coinsBalance===undefined){ usr.coinsBalance=0; changed=true; }
+      if(usr.lifetimeCoins===undefined){ usr.lifetimeCoins=0; changed=true; }
+      if(!Array.isArray(usr.activityLog)){ usr.activityLog=[]; changed=true; }
+      if(usr.shields===undefined){ usr.shields=0; changed=true; }
+      if(!usr.adsToday){ usr.adsToday={date:'', count:0}; changed=true; }
+      if(!usr.questClaims){ usr.questClaims={}; changed=true; }
+      if(usr.inviteClaimed===undefined){ usr.inviteClaimed=false; changed=true; }
+      if(usr.profileBoostUntil===undefined){ usr.profileBoostUntil=0; changed=true; }
+      if(usr.verified===undefined){ usr.verified=false; changed=true; }
+      if(!Array.isArray(usr.blocked)){ usr.blocked=[]; changed=true; }
+      if(!Array.isArray(usr.muted)){ usr.muted=[]; changed=true; }
+      if(usr.cover===undefined){ usr.cover=null; changed=true; }
+      if(usr.job===undefined){ usr.job=''; changed=true; }
+      if(usr.gender===undefined){ usr.gender=''; changed=true; }
+      if(usr.age===undefined){ usr.age=null; changed=true; }
+      if(usr.location===undefined){ usr.location=''; changed=true; }
+      if(usr.website===undefined){ usr.website=''; changed=true; }
+      if(usr.joinedAt===undefined){ usr.joinedAt=Date.now()-90*86400000; changed=true; }
+      if(usr.verificationRequested===undefined){ usr.verificationRequested=false; changed=true; }
+    });
+    if(changed) save('frameo_users', u);
+    const p = load('frameo_posts', []);
+    let pChanged = false;
+    p.forEach(post=>{
+      if(!Array.isArray(post.savedBy)){ post.savedBy=[]; pChanged=true; }
+      if(post.pinned===undefined){ post.pinned=false; pChanged=true; }
+      if(post.archived===undefined){ post.archived=false; pChanged=true; }
+      (post.comments||[]).forEach(c=>{ if(!Array.isArray(c.likes)){ c.likes=[]; pChanged=true; } });
+    });
+    if(pChanged) save('frameo_posts', p);
+  }catch(e){}
+}
+migrateData();
+
+/* ---------------- state ---------------- */
+let currentUser = load('frameo_current_user', null);
+let authMode = 'login';
+let activeThreadKey = null;
+let activeChatPartner = null;
+let activeCommentsPostId = null;
+let viewingProfile = null;
+let pendingMedia = null; // {dataUrl, type}
+
+function users(){ return load('frameo_users', []); }
+function setUsers(u){ return save('frameo_users', u); }
+function getUser(uname){ return users().find(u=>u.username===uname); }
+function posts(){ return load('frameo_posts', []); }
+function setPosts(p){ return save('frameo_posts', p); }
+function notifications(){ return load('frameo_notifications', {}); }
+function setNotifications(n){ return save('frameo_notifications', n); }
+function messages(){ return load('frameo_messages', {}); }
+function setMessages(m){ return save('frameo_messages', m); }
+function threadKey(a,b){ return [a,b].sort().join('__'); }
+
+function pushNotification(toUser, text, type){
+  if(toUser===currentUser) return;
+  const target = getUser(toUser);
+  if(type==='like' && target && target.notifyLikes===false) return;
+  if(type==='comment' && target && target.notifyComments===false) return;
+  if(type==='follow' && target && target.notifyFollows===false) return;
+  const n = notifications();
+  if(!n[toUser]) n[toUser]=[];
+  n[toUser].unshift({text, time:Date.now(), unread:true});
+  setNotifications(n);
+}
+
+/* ---------------- auth ---------------- */
+function toggleAuthMode(){
+  authMode = authMode==='login' ? 'signup' : 'login';
+  document.getElementById('auth-name').style.display = authMode==='signup' ? 'block':'none';
+  document.getElementById('auth-submit').textContent = authMode==='signup' ? 'Create account':'Log in';
+  document.getElementById('auth-tag').textContent = authMode==='signup' ? 'join and start sharing' : 'share the moment, not just the photo';
+  document.getElementById('auth-switch').innerHTML = authMode==='signup'
+    ? 'Already have an account? <b onclick="toggleAuthMode()">Log in</b>'
+    : 'New here? <b onclick="toggleAuthMode()">Create an account</b>';
+  document.getElementById('auth-error').textContent='';
+}
+function demoLogin(){
+  document.getElementById('auth-username').value='ayeshak';
+  document.getElementById('auth-password').value='demo';
+  submitLogin();
+}
+function submitLogin(){
+  const uname = document.getElementById('auth-username').value.trim().toLowerCase();
+  const pass = document.getElementById('auth-password').value;
+  const err = document.getElementById('auth-error');
+  if(!uname || !pass){ err.textContent='Fill in all fields'; return; }
+  if(authMode==='signup'){
+    const name = document.getElementById('auth-name').value.trim();
+    if(!name){ err.textContent='Enter your name'; return; }
+    if(getUser(uname)){ err.textContent='That username is taken'; return; }
+    const u = users();
+    u.push({username:uname, name, password:pass, bio:'New to Frameo 👋', avatar:null, cover:null, followers:[], following:[], private:false, notifyLikes:true, notifyComments:true, notifyFollows:true, notif:{postReactions:{alerts:true,sound:true},comments:{alerts:true,sound:true},commentReactions:{alerts:true,sound:true},mentions:{alerts:true,sound:true},followers:{alerts:true,sound:true},tags:{alerts:true,sound:true},directMessages:{alerts:true,sound:true}}, verified:false, verificationRequested:false, blocked:[], muted:[], job:'', gender:'', age:null, location:'', website:'', joinedAt: Date.now()});
+    setUsers(u);
+    err.textContent='';
+    logIn(uname);
+  } else {
+    const user = getUser(uname);
+    if(!user || user.password!==pass){ err.textContent='Incorrect username or password'; return; }
+    err.textContent='';
+    logIn(uname);
+  }
+}
+function logIn(uname){
+  currentUser = uname;
+  save('frameo_current_user', uname);
+  document.getElementById('bottomnav').style.display='flex';
+  goTo('home');
+}
+function logOut(){
+  currentUser = null;
+  localStorage.removeItem('frameo_current_user');
+  document.getElementById('bottomnav').style.display='none';
+  document.getElementById('auth-username').value='';
+  document.getElementById('auth-password').value='';
+  goTo('login');
+}
+
+/* ---------------- feed ---------------- */
+function avatarHTML(uname, size){
+  const u = getUser(uname);
+  const letter = u ? u.name[0].toUpperCase() : '?';
+  return u && u.avatar ? `<img src="${u.avatar}">` : letter;
+}
+function renderStories(){
+  const list = users().filter(u=>u.username!==currentUser);
+  document.getElementById('stories').innerHTML = ['+', ...list.map(u=>u.username)].map((u,i)=>`
+    <div class="story" ${i>0?`onclick="openStory('${u}')"`:''}>
+      <div class="story-ring ${i>0 && i%2===0?'seen':''}"><div class="story-avatar">${i===0?'+':avatarHTML(u)}</div></div>
+      <span>${i===0?'Your story':getUser(u).name.split(' ')[0]}</span>
+    </div>`).join('');
+}
+function verifiedBadge(uname){
+  const u = getUser(uname);
+  return u && u.verified ? `<span class="verified-badge">${verifiedIcon}</span>` : '';
+}
+function linkify(text){
+  if(!text) return '';
+  return text
+    .replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))
+    .replace(/(#\w+)/g, '<span style="color:#3897F0; font-weight:600;">$1</span>')
+    .replace(/(@\w+(\.\w+)?)/g, m=>{
+      const uname = m.slice(1);
+      return getUser(uname) ? `<span style="color:#3897F0; font-weight:600; cursor:pointer;" onclick="viewProfile('${uname}')">${m}</span>` : m;
+    });
+}
+let feedFilter = 'latest';
+function switchFeedTab(tab){
+  feedFilter = tab;
+  document.getElementById('feedtab-following').classList.toggle('active', tab==='following');
+  document.getElementById('feedtab-latest').classList.toggle('active', tab==='latest');
+  renderFeed();
+}
+function renderFeed(){
+  const me = getUser(currentUser);
+  let list = posts().filter(p=>!p.archived && !me.blocked.includes(p.author) && !me.muted.includes(p.author));
+  if(feedFilter==='following') list = list.filter(p=>me.following.includes(p.author) || p.author===currentUser);
+  list = list.slice().sort((a,b)=>b.time-a.time);
+  const el = document.getElementById('feed');
+  if(list.length===0){ el.innerHTML = `<div class="empty-note">${feedFilter==='following' ? 'Follow people to see their posts here.' : 'No posts yet. Be the first to share something.'}</div>`; return; }
+  el.innerHTML = list.map(p=>{
+    const author = getUser(p.author);
+    if(!author) return '';
+    const liked = p.likes.includes(currentUser);
+    const saved = (p.savedBy||[]).includes(currentUser);
+    const following = me.following.includes(p.author);
+    const isMine = p.author===currentUser;
+    let mediaHTML = '<div class="post-media">No media</div>';
+    if(p.mediaType==='seed') mediaHTML = '<div class="post-media">Photo</div>';
+    else if(p.mediaType==='image') mediaHTML = `<div class="post-media" ondblclick="doubleTapLike(${p.id}, this)"><img src="${p.media}"></div>`;
+    else if(p.mediaType==='video') mediaHTML = `<div class="post-media"><video src="${p.media}" controls></video></div>`;
+    return `
+    <div class="post">
+      ${p.repostOf ? `<div style="padding:8px 18px 0; font-size:11.5px; color:var(--ink-soft); display:flex; align-items:center; gap:5px;">${shareIcon.replace('width="24"','width="12"').replace('height="24"','height="12"')} Reposted from @${p.repostOf}</div>` : ''}
+      <div class="post-head">
+        <div class="avatar" onclick="viewProfile('${p.author}')">${avatarWithStatus(p.author)}</div>
+        <div class="post-head-text" onclick="viewProfile('${p.author}')">
+          <div class="name">${author.name}${verifiedBadge(p.author)}</div>
+          <div class="meta">${timeAgo(p.time)}</div>
+        </div>
+        <button class="more-btn" onclick="postOptions(${p.id})">${moreIcon}</button>
+      </div>
+      ${mediaHTML}
+      <div class="post-actions">
+        <button class="action-btn ${liked?'liked':''}" id="like-btn-${p.id}" onclick="toggleLike(${p.id})">${heartIcon(liked)}</button>
+        <button class="action-btn" onclick="openComments(${p.id})">${commentIcon}</button>
+        <button class="action-btn" onclick="sharePost(${p.id})">${shareIcon}</button>
+        <div class="spacer"></div>
+        <button class="action-btn ${saved?'saved':''}" onclick="toggleSaved(${p.id})">${saveIcon(saved)}</button>
+      </div>
+      <div class="post-likes">${p.likes.length} likes</div>
+      <div class="post-caption"><b>@${author.username}</b> ${linkify(p.caption)}</div>
+      <div class="post-comments-link" onclick="openComments(${p.id})">View all ${p.comments.length} comments</div>
+      <div class="post-time">@${author.username} · ${timeAgo(p.time)}</div>
+    </div>`;
+  }).join('');
+}
+function doubleTapLike(id, el){
+  const p = posts(); const post = p.find(x=>x.id===id);
+  if(!post.likes.includes(currentUser)){ post.likes.push(currentUser); pushNotification(post.author, `<b>@${currentUser}</b> liked your post`, 'like'); setPosts(p); }
+  const burst = document.createElement('div');
+  burst.className='heart-burst';
+  burst.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>`;
+  el.style.position='relative';
+  el.appendChild(burst);
+  setTimeout(()=>burst.remove(), 850);
+  renderFeed();
+}
+function toggleSaved(id){
+  const p = posts(); const post = p.find(x=>x.id===id);
+  if(!post.savedBy) post.savedBy=[];
+  const i = post.savedBy.indexOf(currentUser);
+  if(i===-1){ post.savedBy.push(currentUser); toast('Saved'); } else { post.savedBy.splice(i,1); toast('Removed from saved'); }
+  setPosts(p); renderFeed();
+}
+function toggleLike(id){
+  const p = posts(); const post = p.find(x=>x.id===id);
+  const i = post.likes.indexOf(currentUser);
+  if(i===-1){ post.likes.push(currentUser); pushNotification(post.author, `<b>@${currentUser}</b> liked your post`, 'like'); bumpDailyCounter('dailyLikes'); }
+  else post.likes.splice(i,1);
+  setPosts(p); renderFeed(); if(document.getElementById('screen-profile').classList.contains('active')) renderProfile();
+}
+function toggleFollow(target){
+  const u = users();
+  const me = u.find(x=>x.username===currentUser);
+  const them = u.find(x=>x.username===target);
+  const i = me.following.indexOf(target);
+  if(i===-1){ me.following.push(target); them.followers.push(currentUser); pushNotification(target, `<b>@${currentUser}</b> started following you`, 'follow'); setUsers(u); bumpDailyCounter('dailyFollows'); }
+  else { me.following.splice(i,1); them.followers.splice(them.followers.indexOf(currentUser),1); setUsers(u); }
+  renderFeed(); if(document.getElementById('screen-profile').classList.contains('active')) renderProfile();
+}
+function sharePost(id){ alert('Post link copied (demo only).'); }
+
+
+/* ---------------- comments ---------------- */
+function openComments(id){
+  activeCommentsPostId = id;
+  renderComments();
+  goTo('comments');
+}
+function renderComments(){
+  const post = posts().find(x=>x.id===activeCommentsPostId);
+  const el = document.getElementById('comments-list');
+  if(!post.comments.length){ el.innerHTML = '<div class="empty-note">No comments yet.</div>'; return; }
+  el.innerHTML = post.comments.map((c,i)=>{
+    const cLiked = (c.likes||[]).includes(currentUser);
+    return `<div class="comment-row">
+      <div class="ctext"><b>@${c.author}</b> ${linkify(c.text)}</div>
+      <button class="comment-like-btn ${cLiked?'liked':''}" onclick="toggleCommentLike(${post.id}, ${i})">${heartIcon(cLiked)}<span>${(c.likes||[]).length||''}</span></button>
+    </div>`;
+  }).join('');
+}
+function submitComment(){
+  const input = document.getElementById('comment-input');
+  if(!input.value.trim()) return;
+  const p = posts(); const post = p.find(x=>x.id===activeCommentsPostId);
+  post.comments.push({author:currentUser, text:input.value.trim(), likes:[]});
+  setPosts(p);
+  bumpDailyCounter('dailyComments');
+  if(post.author!==currentUser) pushNotification(post.author, `<b>@${currentUser}</b> commented: "${input.value.trim()}"`, 'comment');
+  input.value='';
+  renderComments(); renderFeed();
+}
+
+/* ---------------- search ---------------- */
+function renderSearch(query){
+  query = (query||'').trim().toLowerCase();
+  const label = document.getElementById('search-label');
+  const base = query ? users().filter(u=>u.username!==currentUser) : suggestedUsers();
+  const matchedUsers = query ? base.filter(u=>u.name.toLowerCase().includes(query) || u.username.includes(query)) : base;
+  const matchedPosts = query ? posts().filter(p=>p.caption.toLowerCase().includes(query)) : [];
+  label.textContent = query ? 'Results' : 'People you may know';
+  let html = matchedUsers.map(u=>`
+    <div class="result-row" onclick="viewProfile('${u.username}')">
+      <div class="avatar">${avatarWithStatus(u.username)}</div>
+      <div><div class="name">${u.name}${verifiedBadge(u.username)}</div><div class="meta">@${u.username}${u.followers.includes(currentUser)?' · following':''}</div></div>
+    </div>`).join('');
+  if(matchedPosts.length){
+    html += '<div class="section-label">Matching posts</div>' + matchedPosts.map(p=>`
+      <div class="result-row" onclick="openComments(${p.id})">
+        <div class="avatar">${avatarHTML(p.author)}</div>
+        <div><div class="name">@${p.author}</div><div class="meta">${p.caption.slice(0,40)}${p.caption.length>40?'…':''}</div></div>
+      </div>`).join('');
+  }
+  if(!query){
+    const tags = trendingHashtags();
+    if(tags.length){
+      html = `<div class="section-label" style="padding-top:0;">Trending hashtags</div><div style="display:flex; gap:8px; overflow-x:auto; padding:0 18px 14px;">
+        ${tags.map(([tag,count])=>`<div class="hashtag-chip" onclick="document.getElementById('search-input').value='${tag.slice(1)}'; renderSearch('${tag.slice(1)}');"><b>${tag}</b><span>${count} post${count>1?'s':''}</span></div>`).join('')}
+      </div>` + html;
+    }
+  }
+  document.getElementById('search-results').innerHTML = html || '<div class="empty-note">No matches found.</div>';
+}
+function switchSearchTab(tab){
+  document.querySelectorAll('[data-stab]').forEach(b=>b.classList.toggle('active', b.dataset.stab===tab));
+  document.getElementById('search-people-panel').style.display = tab==='people' ? 'block':'none';
+  document.getElementById('explore-grid').style.display = tab==='explore' ? 'grid':'none';
+  if(tab==='explore') renderExplore();
+}
+function renderExplore(){
+  const list = posts().slice().sort((a,b)=> (b.likes.length+b.comments.length) - (a.likes.length+a.comments.length));
+  const grid = document.getElementById('explore-grid');
+  grid.innerHTML = list.length ? list.map(p=>{
+    let inner = p.mediaType==='image' ? `<img src="${p.media}">` : p.mediaType==='video' ? `<video src="${p.media}"></video>` : '🖼';
+    return `<div class="grid-item" onclick="openComments(${p.id})">${inner}</div>`;
+  }).join('') : '<div class="empty-note" style="grid-column:1/-1;">Nothing trending yet.</div>';
+}
+
+/* ---------------- notifications ---------------- */
+function renderNotifs(){
+  const n = notifications()[currentUser] || [];
+  document.getElementById('notif-list').innerHTML = n.length ? n.map(x=>`
+    <div class="notif-row ${x.unread?'unread':''}"><div class="avatar">•</div><div class="notif-text">${x.text}</div><div class="notif-time">${timeAgo(x.time)}</div></div>`).join('')
+    : '<div class="empty-note">No notifications yet.</div>';
+  n.forEach(x=>x.unread=false);
+  const all = notifications(); all[currentUser]=n; setNotifications(all);
+  updateNotifBadge();
+}
+function updateNotifBadge(){
+  const n = (notifications()[currentUser]||[]).filter(x=>x.unread).length;
+  const badge = document.getElementById('notif-badge');
+  if(n>0){ badge.style.display='flex'; badge.textContent=n; } else badge.style.display='none';
+}
+
+/* ---------------- messages ---------------- */
+/* ---------------- story viewer ---------------- */
+let storyOrder = [];
+let storyIndex = 0;
+let storyTimer = null;
+function openStory(uname){
+  storyOrder = users().filter(u=>u.username!==currentUser).map(u=>u.username);
+  storyIndex = storyOrder.indexOf(uname);
+  if(storyIndex===-1) storyIndex=0;
+  goTo('storyviewer');
+  playStory();
+}
+function playStory(){
+  const uname = storyOrder[storyIndex];
+  const u = getUser(uname);
+  if(!u){ closeStory(); return; }
+  document.getElementById('story-avatar').innerHTML = avatarHTML(uname);
+  document.getElementById('story-name').innerHTML = u.name + verifiedBadge(uname);
+  document.getElementById('story-content').innerHTML = `<div>📸<br><br>${u.name}'s story<br><span style="opacity:.6; font-size:12px;">(demo content)</span></div>`;
+  const prog = document.getElementById('story-progress');
+  prog.innerHTML = storyOrder.map((_,i)=>`<div class="progress-seg ${i<storyIndex?'done':''} ${i===storyIndex?'active':''}"><div class="fill"></div></div>`).join('');
+  clearTimeout(storyTimer);
+  storyTimer = setTimeout(()=>nextStory(), 4000);
+}
+function nextStory(){
+  if(storyIndex < storyOrder.length-1){ storyIndex++; playStory(); } else closeStory();
+}
+function prevStory(){
+  if(storyIndex>0){ storyIndex--; playStory(); } else playStory();
+}
+function closeStory(){
+  clearTimeout(storyTimer);
+  goTo('home');
+}
+
+/* ---------------- saved & insights ---------------- */
+function renderSaved(){
+  const mine = posts().filter(p=>(p.savedBy||[]).includes(currentUser)).sort((a,b)=>b.time-a.time);
+  const grid = document.getElementById('saved-grid');
+  grid.innerHTML = mine.length ? mine.map(p=>{
+    let inner = p.mediaType==='image' ? `<img src="${p.media}">` : p.mediaType==='video' ? `<video src="${p.media}"></video>` : '🖼';
+    return `<div class="grid-item" onclick="openComments(${p.id})">${inner}</div>`;
+  }).join('') : '<div class="empty-note" style="grid-column:1/-1;">Posts you save will show up here.</div>';
+}
+function renderArchived(){
+  const mine = posts().filter(p=>p.author===currentUser && p.archived).sort((a,b)=>b.time-a.time);
+  const grid = document.getElementById('archived-grid');
+  grid.innerHTML = mine.length ? mine.map(p=>{
+    let inner = p.mediaType==='image' ? `<img src="${p.media}">` : p.mediaType==='video' ? `<video src="${p.media}"></video>` : '🖼';
+    return `<div class="grid-item" onclick="postOptions(${p.id})">${inner}</div>`;
+  }).join('') : '<div class="empty-note" style="grid-column:1/-1;">Archived posts are hidden from your profile but not deleted.</div>';
+}
+function renderInsights(){
+  const mine = posts().filter(p=>p.author===currentUser);
+  const totalLikes = mine.reduce((a,p)=>a+p.likes.length,0);
+  const totalComments = mine.reduce((a,p)=>a+p.comments.length,0);
+  const me = getUser(currentUser);
+  const seed = (currentUser||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const impressions = Math.round(800 + seededRandom(seed)*60000 + (totalLikes+totalComments)*120);
+  const profileViews = Math.round(5 + seededRandom(seed+1)*250 + me.followers.length*0.8);
+  const videoPosts = mine.filter(p=>p.mediaType==='video').length;
+  const videoViews = Math.round(videoPosts*8 + seededRandom(seed+2)*40);
+  const watchSeconds = Math.round(videoViews*15 + seededRandom(seed+3)*300);
+  const watchLabel = Math.floor(watchSeconds/60)+':'+String(watchSeconds%60).padStart(2,'0')+'m';
+  const balance = me.coinsBalance||0;
+  const lifetime = me.lifetimeCoins||0;
+  const {prev, next} = levelFromLifetime(lifetime);
+  const pct = Math.min(100, Math.round(((lifetime-prev)/(next-prev))*100));
+  const streak = computeStreak();
+  const fmt = n => n>=1000?(n/1000).toFixed(1)+'K':n;
+
+  const body = document.getElementById('insights-body');
+  body.innerHTML = `
+    <div style="margin:16px 18px 0; background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div><div style="font-size:12px; color:var(--ink-soft);">Soft coins</div><div style="font-size:26px; font-weight:800; font-family:var(--font-display);">${fmt(balance)}</div><div style="font-size:11.5px; color:var(--ink-soft);">balance · separate from $ earnings</div></div>
+        <div class="rank-badge">★ ${coinRank(lifetime)}</div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:14px;"><span>${lifetime} / ${next} lifetime</span><span style="color:#3897F0; font-weight:700;">${pct}%</span></div>
+      <div class="verify-progress-bar"><div class="verify-progress-fill" style="width:${pct}%;"></div></div>
+      <div style="font-size:12.5px; margin-top:10px;">🔥 ${streak}-day quest streak</div>
+      <div style="margin-top:6px;"><a style="font-size:12.5px; color:#3897F0; font-weight:700; cursor:pointer;" onclick="goTo('quests')">Coins &amp; Quests →</a></div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:22px 18px 8px;"><b style="font-family:var(--font-display); font-size:17px;">Overview</b><span style="font-size:12.5px; color:var(--ink-soft);">All time</span></div>
+    <div class="stat-cards">
+      <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">👁️</span><div><b style="display:block;">${fmt(impressions)}</b><span>Impressions</span></div></div>
+      <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">❤️</span><div><b style="display:block;">${fmt(totalLikes)}</b><span>Reactions</span></div></div>
+      <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">💬</span><div><b style="display:block;">${totalComments}</b><span>Comments</span></div></div>
+      <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">👤</span><div><b style="display:block;">${profileViews}</b><span>Profile Views</span></div></div>
+      <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">▶️</span><div><b style="display:block;">${videoViews}</b><span>Video Views</span></div></div>
+      <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">⏱️</span><div><b style="display:block;">${watchLabel}</b><span>Watch Time</span></div></div>
+      <div class="stat-card" style="grid-column:1/-1; display:flex; align-items:center; justify-content:center; gap:12px;"><span style="font-size:20px; color:#3AD07A;">$</span><div style="text-align:left;"><b style="display:block;">$0.0000</b><span>Est. Earnings</span></div></div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:22px 18px 4px;"><b style="font-family:var(--font-display); font-size:17px;">Reach</b><span style="font-size:12.5px; color:var(--ink-soft);">Last 30 days</span></div>
+    <div class="analytics-tabs">
+      <button class="analytics-tab" data-iatab="impressions" onclick="switchInsightsTab('impressions')">Impressions</button>
+      <button class="analytics-tab" data-iatab="engagement" onclick="switchInsightsTab('engagement')">Engagement</button>
+      <button class="analytics-tab active" data-iatab="watchtime" onclick="switchInsightsTab('watchtime')">Watch Time</button>
+    </div>
+    <div style="padding:18px;"><svg id="ia-chart" viewBox="0 0 320 180" style="width:100%; height:auto; overflow:visible;"></svg></div>
+  `;
+  drawInsightsChart('watchtime', seed, impressions, totalLikes+totalComments, watchSeconds/60);
+}
+function switchInsightsTab(tab){
+  document.querySelectorAll('[data-iatab]').forEach(b=>b.classList.toggle('active', b.dataset.iatab===tab));
+  const seed = (currentUser||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const mine = posts().filter(p=>p.author===currentUser);
+  const totalLikes = mine.reduce((a,p)=>a+p.likes.length,0);
+  const totalComments = mine.reduce((a,p)=>a+p.comments.length,0);
+  const impressions = Math.round(800 + seededRandom(seed)*60000 + (totalLikes+totalComments)*120);
+  drawInsightsChart(tab, seed, impressions, totalLikes+totalComments, 15);
+}
+function drawInsightsChart(tab, seed, impressions, engagement, watchMinutes){
+  const days=10;
+  const peak = tab==='impressions' ? Math.max(4,Math.round(impressions/days)) : tab==='engagement' ? Math.max(1,Math.round(engagement/2)) : Math.max(1,Math.round(watchMinutes*8));
+  const points=[];
+  for(let i=0;i<days;i++){
+    const spike = seededRandom(seed+i*5+(tab==='impressions'?10:tab==='engagement'?20:30));
+    points.push(Math.max(0, peak * Math.pow(spike,3)));
+  }
+  const maxV = Math.max(1, ...points);
+  const w=320,h=140,pad=30;
+  const stepX=(w-pad)/(days-1);
+  const color = tab==='impressions'?'#3897F0':tab==='engagement'?'#3AD07A':'#F2A93B';
+  const coords = points.map((v,i)=>[pad+i*stepX, 10+(h-10)-(v/maxV)*(h-10)]);
+  const linePath = coords.map((c,i)=>(i===0?'M':'L')+c[0]+','+c[1]).join(' ');
+  const areaPath = linePath + ` L${coords[coords.length-1][0]},${h} L${coords[0][0]},${h} Z`;
+  const gridLines=[0,0.2,0.4,0.6,0.8,1].map(f=>{ const y=10+(h-10)-f*(h-10); return `<line x1="${pad}" y1="${y}" x2="${w}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="0" y="${y+4}" font-size="10" fill="var(--ink-soft)">${Math.round(f*maxV)}</text>`; }).join('');
+  const dots = coords.map(c=>`<circle cx="${c[0]}" cy="${c[1]}" r="3" fill="${color}"/>`).join('');
+  const today = new Date();
+  const labelSvg = coords.map((c,i)=>{ const d=new Date(today); d.setDate(d.getDate()-(days-1-i)); return i%3===0||i===days-1 ? `<text x="${c[0]}" y="${h+16}" font-size="10" fill="var(--ink-soft)" text-anchor="middle">${d.getDate()}</text>` : ''; }).join('');
+  document.getElementById('ia-chart').innerHTML = gridLines + `<path d="${areaPath}" fill="${color}" opacity="0.15" stroke="none"/><path d="${linePath}" fill="none" stroke="${color}" stroke-width="2.5"/>` + dots + labelSvg;
+}
+
+/* ---------------- dark mode ---------------- */
+function toggleDarkMode(){
+  const dark = document.documentElement.getAttribute('data-theme')==='dark';
+  const next = dark ? '' : 'dark';
+  if(next) document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme');
+  save('frameo_dark_mode', !!next);
+  document.getElementById('dark-toggle-btn').classList.toggle('on', !!next);
+}
+function applyStoredTheme(){
+  if(load('frameo_dark_mode', false)) document.documentElement.setAttribute('data-theme','dark');
+}
+applyStoredTheme();
+
+/* ---------------- action sheet ---------------- */
+function openSheet(title, options){
+  const sheet = document.getElementById('action-sheet');
+  sheet.innerHTML = `<div class="sheet-title">${title}</div>` +
+    options.map((o,i)=>`<button class="sheet-btn ${o.danger?'danger':''}" onclick="runSheetAction(${i})">${o.label}</button>`).join('') +
+    `<button class="sheet-btn cancel" onclick="closeSheet()">Cancel</button>`;
+  window._sheetActions = options;
+  document.getElementById('sheet-overlay').classList.add('show');
+}
+function runSheetAction(i){
+  const opt = window._sheetActions[i];
+  closeSheet();
+  if(opt && opt.action) opt.action();
+}
+function closeSheet(){
+  document.getElementById('sheet-overlay').classList.remove('show');
+}
+
+/* ---------------- menu extras: switch account, verification, referrals, contact, misc ---------------- */
+function openSwitchAccountSheet(){
+  const u = getUser(currentUser);
+  const sheet = document.getElementById('action-sheet');
+  sheet.innerHTML = `<div class="sheet-title">Switch Account</div>
+    <div style="display:flex; align-items:center; gap:12px; padding:14px 20px;">
+      <div class="avatar" style="width:44px;height:44px;">${avatarHTML(currentUser)}</div>
+      <div style="flex:1;"><div style="font-weight:700; font-size:14.5px;">${u.name}</div><div style="font-size:12px; color:var(--ink-soft);">@${u.username}</div></div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3897F0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
+    <button class="sheet-btn" onclick="closeSheet(); toast('Log out first to add or switch to another account.');" style="display:flex; align-items:center; justify-content:center; gap:8px;">+ Add another account</button>
+    <button class="sheet-btn cancel" onclick="closeSheet()">Cancel</button>`;
+  document.getElementById('sheet-overlay').classList.add('show');
+}
+function checkAppUpdate(){ toast("You're on the latest version"); }
+function rateUs(){ toast('Thanks for the love! (Rate Us is a demo action here)'); }
+function confirmLogOut(){
+  openSheet('Log out of Frameo?', [
+    {label:'Log Out', danger:true, action:()=>logOut()},
+  ]);
+}
+function shareOnWhatsApp(){
+  const link = `https://frameo.app/invite/${currentUser}`;
+  const text = encodeURIComponent(`Join me on Frameo! ${link}`);
+  try{ window.open(`https://wa.me/?text=${text}`, '_blank'); }catch(e){}
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if(me && !me.inviteClaimed){ me.inviteClaimed=true; setUsers(u); addCoins(15,'INVITE SHARED'); toast('Shared! +15 coins'); }
+  else toast('Opening WhatsApp...');
+}
+function renderVerification(){
+  const u = getUser(currentUser);
+  const need = 1000;
+  const have = u.followers.length;
+  const eligible = have>=need;
+  const pct = Math.min(100, Math.round((have/need)*100));
+  document.getElementById('verification-body').innerHTML = `
+    <div style="width:88px;height:88px;border-radius:50%; background:var(--paper); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="${eligible?'#3897F0':'var(--ink-soft)'}" stroke-width="2"><path d="M12 2l2.4 1.2 2.6-.6 1.3 2.3 2.3 1.3-.6 2.6L21.2 11l-1.2 2.4.6 2.6-2.3 1.3-1.3 2.3-2.6-.6L12 21.2l-2.4-1.2-2.6.6-1.3-2.3-2.3-1.3.6-2.6L2.8 11l1.2-2.4-.6-2.6 2.3-1.3 1.3-2.3 2.6.6z"/><path d="M9 12l2 2 4-4"/></svg>
+    </div>
+    <div style="font-weight:800; font-size:19px; font-family:var(--font-display); margin-bottom:6px;">${u.verified?'You are verified':eligible?'Eligible!':'Not eligible yet'}</div>
+    <div style="color:var(--ink-soft); font-size:13px; margin-bottom:22px;">${u.verified?'Your account has the blue tick.':eligible?'You meet the follower requirement — request your blue tick below.':`You need ${need-have} more followers to apply for the blue tick.`}</div>
+    <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:2px;"><span>Followers</span><span>${have} / ${have>=1000?have:'1.0K'}</span></div>
+    <div class="verify-progress-bar"><div class="verify-progress-fill" style="width:${pct}%;"></div></div>
+    <div style="background:var(--paper); border-radius:14px; padding:16px; margin-top:20px; display:flex; gap:12px; align-items:flex-start; text-align:left;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" style="flex-shrink:0; margin-top:2px;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.5;">${eligible && !u.verified ? 'Tap below to submit your verification request.' : 'Keep posting and growing your audience. This screen updates automatically as your followers increase.'}</div>
+    </div>
+    ${(!u.verified && eligible) ? `<button class="login-btn" style="margin-top:20px;" onclick="requestVerification(); renderVerification();">Request blue tick</button>` : ''}
+  `;
+}
+function renderReferrals(){
+  const u = getUser(currentUser);
+  document.getElementById('referrals-body').innerHTML = `
+    <div style="display:flex; margin:16px 18px; background:var(--paper); border-radius:16px; padding:18px;">
+      <div style="flex:1; text-align:center; border-right:1px solid var(--line);"><div style="font-size:24px; font-weight:800; color:var(--ink-soft); font-family:var(--font-display);">0</div><div style="font-size:12px; color:var(--ink-soft);">Lifetime referrals</div></div>
+      <div style="flex:1; text-align:center;"><div style="font-size:24px; font-weight:800; color:var(--ink-soft); font-family:var(--font-display);">0</div><div style="font-size:12px; color:var(--ink-soft);">Counted</div></div>
+    </div>
+    <div style="margin:0 18px 16px; background:var(--paper); border-radius:16px; padding:18px;">
+      <div style="font-weight:700; font-size:15px; margin-bottom:4px;">Invite friends</div>
+      <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:14px;">Share your link — every genuine signup shows up here.</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="flex:1; font-size:12.5px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">https://frameo.app/invite/${currentUser}</div>
+        <button class="icon-btn" onclick="copyReferralLink()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        <button class="icon-btn" onclick="shareOnWhatsApp()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg></button>
+      </div>
+    </div>
+    <div class="section-label">All referrals</div>
+    <div class="empty-note">No referrals yet — share your link to invite friends.</div>
+  `;
+}
+function submitContactForm(){
+  const title = document.getElementById('contact-title').value.trim();
+  const body = document.getElementById('contact-body').value.trim();
+  if(!title || !body){ toast('Please fill in both fields'); return; }
+  document.getElementById('contact-title').value='';
+  document.getElementById('contact-body').value='';
+  document.getElementById('contact-count').textContent='0/200';
+  toast('Message sent — thanks for the feedback!');
+  goTo('menu');
+}
+function toggleNotifDeep(cat, kind){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if(!me.notif) return;
+  me.notif[cat][kind] = !me.notif[cat][kind];
+  if(cat==='postReactions' && kind==='alerts') me.notifyLikes = me.notif[cat][kind];
+  if(cat==='comments' && kind==='alerts') me.notifyComments = me.notif[cat][kind];
+  if(cat==='followers' && kind==='alerts') me.notifyFollows = me.notif[cat][kind];
+  setUsers(u);
+  renderNotifSettings();
+}
+function notifCategoryHTML(u, cat, icon, iconBg, title){
+  const c = u.notif[cat];
+  return `<div class="notif-cat"><div class="nicon" style="background:${iconBg};">${icon}</div><div class="ntitle">${title}</div></div>
+    <div class="notif-toggle-row"><span class="nlabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Allow alerts</span><button class="toggle-switch ${c.alerts?'on':''}" onclick="toggleNotifDeep('${cat}','alerts')"></button></div>
+    <div class="notif-toggle-row"><span class="nlabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M19 9a5 5 0 010 6"/></svg>Notification sound</span><button class="toggle-switch ${c.sound?'on':''}" onclick="toggleNotifDeep('${cat}','sound')"></button></div>`;
+}
+function renderNotifSettings(){
+  const u = getUser(currentUser);
+  document.getElementById('notifsettings-body').innerHTML = `
+    <div class="section-label" style="padding-top:0;">ACTIVITY & INTERACTIONS</div>
+    <div class="notif-section">
+      ${notifCategoryHTML(u,'postReactions','❤️','#3D1B22','Post reactions')}
+    </div>
+    <div class="notif-section">
+      ${notifCategoryHTML(u,'comments','💬','#1E3D2E','Comments')}
+    </div>
+    <div class="notif-section">
+      ${notifCategoryHTML(u,'commentReactions','👍','#2E2A55','Comment reactions')}
+    </div>
+    <div class="notif-section">
+      ${notifCategoryHTML(u,'mentions','@','#1E2A4A','Mentions (@)')}
+    </div>
+    <div class="section-label">SOCIAL CONNECTIONS</div>
+    <div class="notif-section">
+      ${notifCategoryHTML(u,'followers','👤','#4A3313','Followers')}
+    </div>
+    <div class="notif-section">
+      ${notifCategoryHTML(u,'tags','#','#4A1E33','Tags')}
+    </div>
+    <div class="section-label">MESSAGES</div>
+    <div class="notif-section">
+      ${notifCategoryHTML(u,'directMessages','✉️','#1E3D33','Direct messages')}
+    </div>
+    <div style="height:20px;"></div>
+  `;
+}
+
+/* ---------------- online status (simulated, stable per session) ---------------- */
+function isOnline(uname){
+  let h=0; for(let i=0;i<uname.length;i++) h = (h*31 + uname.charCodeAt(i))%97;
+  return h%3!==0; // ~2/3 of users show online, stable per username
+}
+function avatarWithStatus(uname, size){
+  return `<span class="avatar-wrap">${avatarHTML(uname)}${isOnline(uname)?'<span class="online-dot"></span>':''}</span>`;
+}
+
+/* ---------------- block / mute / report user ---------------- */
+function profileOptions(uname){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  const isBlocked = me.blocked.includes(uname);
+  const isMuted = me.muted.includes(uname);
+  openSheet(`@${uname}`, [
+    {label: isBlocked?'Unblock':'Block', danger:!isBlocked, action:()=>toggleBlock(uname)},
+    {label: isMuted?'Unmute':'Mute', action:()=>toggleMute(uname)},
+    {label:'Report account', danger:true, action:()=>{ toast('Reported. Admins will review this account.'); }},
+  ]);
+}
+function toggleBlock(uname){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  const i = me.blocked.indexOf(uname);
+  if(i===-1){ me.blocked.push(uname); toast(`Blocked @${uname}`); } else { me.blocked.splice(i,1); toast(`Unblocked @${uname}`); }
+  setUsers(u); renderFeed();
+}
+function toggleMute(uname){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  const i = me.muted.indexOf(uname);
+  if(i===-1){ me.muted.push(uname); toast(`Muted @${uname}`); } else { me.muted.splice(i,1); toast(`Unmuted @${uname}`); }
+  setUsers(u); renderFeed();
+}
+
+/* ---------------- post options: pin / archive / delete / report / repost ---------------- */
+function postOptions(id){
+  const post = posts().find(x=>x.id===id);
+  const isMine = post.author===currentUser;
+  const me = getUser(currentUser);
+  const opts = [];
+  opts.push({label:'View insights', action:()=>openPostAnalytics(id, document.querySelector('.screen.active').id.replace('screen-',''))});
+  if(isMine){
+    opts.push({label: post.pinned?'Unpin from profile':'Pin to profile', action:()=>togglePin(id)});
+    opts.push({label: post.archived?'Unarchive':'Archive', action:()=>toggleArchive(id)});
+    opts.push({label:'Delete post', danger:true, action:()=>deletePost(id)});
+  } else {
+    const following = me.following.includes(post.author);
+    opts.push({label: following?'Unfollow @'+post.author:'Follow @'+post.author, action:()=>toggleFollow(post.author)});
+    opts.push({label:'Repost to your profile', action:()=>repost(id)});
+    opts.push({label:'Report post', danger:true, action:()=>reportPost(id)});
+  }
+  openSheet('Post options', opts);
+}
+function togglePin(id){
+  const p = posts(); const post = p.find(x=>x.id===id);
+  if(!post.pinned){ p.forEach(x=>{ if(x.author===post.author) x.pinned=false; }); post.pinned=true; toast('Pinned to your profile'); }
+  else { post.pinned=false; toast('Unpinned'); }
+  setPosts(p); renderFeed(); renderProfile();
+}
+function toggleArchive(id){
+  const p = posts(); const post = p.find(x=>x.id===id);
+  post.archived = !post.archived;
+  toast(post.archived ? 'Post archived' : 'Post unarchived');
+  setPosts(p); renderFeed(); renderProfile();
+}
+function deletePost(id){
+  if(!confirm('Delete this post?')) return;
+  setPosts(posts().filter(x=>x.id!==id)); renderFeed(); renderProfile();
+}
+function reportPost(id){
+  const p = posts(); const post = p.find(x=>x.id===id);
+  post.reported = true; setPosts(p);
+  toast('Reported. Admins will review it.');
+}
+function repost(id){
+  const original = posts().find(x=>x.id===id);
+  if(!original) return;
+  const p = posts();
+  const nextId = load('frameo_next_id', p.length+1);
+  p.push({id:nextId, author:currentUser, media:original.media, mediaType:original.mediaType, caption:original.caption, likes:[], comments:[], time:Date.now(), reported:false, savedBy:[], pinned:false, archived:false, repostOf:original.author});
+  const ok = setPosts(p);
+  if(!ok) return;
+  save('frameo_next_id', nextId+1);
+  toast('Reposted to your profile');
+  renderFeed();
+}
+
+/* ---------------- comment likes ---------------- */
+function toggleCommentLike(postId, idx){
+  const p = posts(); const post = p.find(x=>x.id===postId);
+  const c = post.comments[idx];
+  if(!c.likes) c.likes=[];
+  const i = c.likes.indexOf(currentUser);
+  if(i===-1) c.likes.push(currentUser); else c.likes.splice(i,1);
+  setPosts(p); renderComments();
+}
+
+/* ---------------- people you may know ---------------- */
+function suggestedUsers(){
+  const me = getUser(currentUser);
+  return users().filter(u=>u.username!==currentUser && !me.following.includes(u.username) && !me.blocked.includes(u.username));
+}
+function trendingHashtags(){
+  const counts = {};
+  posts().forEach(p=>{
+    (p.caption.match(/#\w+/g)||[]).forEach(tag=>{ counts[tag] = (counts[tag]||0)+1; });
+  });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+}
+
+/* ---------------- post analytics (per post, styled like native insights) ---------------- */
+let analyticsReturnScreen = 'home';
+let currentAnalyticsPost = null;
+function seededRandom(seed){
+  let x = Math.sin(seed)*10000;
+  return x - Math.floor(x);
+}
+function openPostAnalytics(id, fromScreen){
+  analyticsReturnScreen = fromScreen || 'home';
+  currentAnalyticsPost = id;
+  const post = posts().find(x=>x.id===id);
+  if(!post){ toast('Post not found'); return; }
+  const likes = post.likes.length, comments = post.comments.length;
+  const base = id*37 + (post.author||'').length*13;
+  const impressions = Math.round(400 + seededRandom(base)*4000 + (likes+comments)*40);
+  const profileViews = Math.round(2 + seededRandom(base+1)*30 + likes*0.3);
+  const engagement = likes + comments + Math.round(seededRandom(base+2)*8);
+  document.getElementById('pa-reaction-total').textContent = (likes+comments) || 0;
+  document.getElementById('pa-stats').innerHTML = `
+    <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">👁️</span><div><b style="display:block;">${impressions>=1000?(impressions/1000).toFixed(1)+'K':impressions}</b><span>Impressions</span></div></div>
+    <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">👣</span><div><b style="display:block;">${engagement}</b><span>Engagement</span></div></div>
+    <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">👤</span><div><b style="display:block;">${profileViews}</b><span>Profile Views</span></div></div>
+    <div class="stat-card" style="display:flex; align-items:center; gap:12px; text-align:left;"><span style="font-size:20px;">❤️</span><div><b style="display:block;">${likes}</b><span>Likes</span></div></div>
+    <div class="stat-card" style="grid-column:1/-1; display:flex; align-items:center; justify-content:center; gap:12px;"><span style="font-size:20px;">💬</span><div style="text-align:left;"><b style="display:block;">${comments}</b><span>Comments</span></div></div>
+  `;
+  document.querySelectorAll('[data-atab]').forEach(b=>b.classList.toggle('active', b.dataset.atab==='engagement'));
+  drawAnalyticsChart('engagement', base, impressions, engagement);
+  goTo('postanalytics');
+}
+function switchAnalyticsTab(tab){
+  document.querySelectorAll('[data-atab]').forEach(b=>b.classList.toggle('active', b.dataset.atab===tab));
+  const post = posts().find(x=>x.id===currentAnalyticsPost);
+  const likes = post.likes.length, comments = post.comments.length;
+  const base = currentAnalyticsPost*37 + (post.author||'').length*13;
+  const impressions = Math.round(400 + seededRandom(base)*4000 + (likes+comments)*40);
+  const engagement = likes + comments + Math.round(seededRandom(base+2)*8);
+  drawAnalyticsChart(tab, base, impressions, engagement);
+}
+function drawAnalyticsChart(tab, base, impressions, engagement){
+  const days = 7;
+  const peak = tab==='impressions' ? Math.max(4, Math.round(impressions/days)) : Math.max(1, Math.round(engagement/2));
+  const points = [];
+  for(let i=0;i<days;i++){
+    const v = Math.max(0, peak * (0.3 + seededRandom(base+i*3+(tab==='impressions'?100:200))*0.9));
+    points.push(v);
+  }
+  const maxV = Math.max(1, ...points);
+  const w=320, h=140, pad=30;
+  const stepX = (w-pad)/(days-1);
+  const color = tab==='impressions' ? '#3897F0' : '#3AD07A';
+  const coords = points.map((v,i)=>{
+    const x = pad + i*stepX;
+    const y = 10 + (h-10) - (v/maxV)*(h-10);
+    return [x,y];
+  });
+  const linePath = coords.map((c,i)=> (i===0?'M':'L')+c[0]+','+c[1]).join(' ');
+  const gridLines = [0,0.2,0.4,0.6,0.8,1].map(f=>{
+    const y = 10 + (h-10) - f*(h-10);
+    return `<line x1="${pad}" y1="${y}" x2="${w}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="0" y="${y+4}" font-size="10" fill="var(--ink-soft)">${maxV<=1?f:Math.round(f*maxV)}</text>`;
+  }).join('');
+  const dots = coords.map(c=>`<circle cx="${c[0]}" cy="${c[1]}" r="3" fill="${color}"/>`).join('');
+  const today = new Date();
+  const labels = points.map((_,i)=>{
+    const d = new Date(today); d.setDate(d.getDate()-(days-1-i));
+    return d.getDate();
+  });
+  const labelSvg = labels.map((l,i)=> i===0||i===labels.length-1 ? `<text x="${pad+i*stepX}" y="${h+16}" font-size="10" fill="var(--ink-soft)" text-anchor="${i===0?'start':'end'}">${l}</text>` : '').join('');
+  document.getElementById('pa-chart').innerHTML = gridLines + `<path d="${linePath}" fill="none" stroke="${color}" stroke-width="2.5"/>` + dots + labelSvg;
+}
+
+/* ---------------- menu screen ---------------- */
+function renderMenu(){
+  const u = getUser(currentUser);
+  document.getElementById('menu-avatar').innerHTML = avatarHTML(currentUser);
+  document.getElementById('menu-name').textContent = u.name;
+  document.getElementById('menu-followers').textContent = u.followers.length + ' followers';
+}
+function copyReferralLink(){
+  const link = `https://frameo.app/invite/${currentUser}`;
+  try{ navigator.clipboard.writeText(link); toast('Referral link copied'); }
+  catch(e){ toast(link); }
+}
+
+/* ---------------- reels ---------------- */
+function renderReels(){
+  const me = getUser(currentUser);
+  const vids = posts().filter(p=>p.mediaType==='video' && !p.archived && !me.blocked.includes(p.author) && !me.muted.includes(p.author)).sort((a,b)=>b.time-a.time);
+  const el = document.getElementById('reels-list');
+  if(!vids.length){ el.innerHTML = '<div class="empty-note">No video posts yet. Share a video to start Reels.</div>'; return; }
+  el.innerHTML = vids.map(p=>{
+    const author = getUser(p.author);
+    return `<div class="post">
+      <div class="post-head">
+        <div class="avatar" onclick="viewProfile('${p.author}')">${avatarWithStatus(p.author)}</div>
+        <div class="post-head-text" onclick="viewProfile('${p.author}')"><div class="name">${author.name}${verifiedBadge(p.author)}</div><div class="meta">${timeAgo(p.time)}</div></div>
+        <button class="more-btn" onclick="postOptions(${p.id})">${moreIcon}</button>
+      </div>
+      <div class="post-media"><video src="${p.media}" controls style="width:100%;"></video></div>
+      <div class="post-actions">
+        <button class="action-btn ${p.likes.includes(currentUser)?'liked':''}" onclick="toggleLike(${p.id}); renderReels();">${heartIcon(p.likes.includes(currentUser))}</button>
+        <button class="action-btn" onclick="openComments(${p.id})">${commentIcon}</button>
+        <button class="action-btn" onclick="sharePost(${p.id})">${shareIcon}</button>
+      </div>
+      <div class="post-likes">${p.likes.length} likes</div>
+      <div class="post-caption"><b>@${p.author}</b> ${linkify(p.caption)}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- followers / blocked / videos lists ---------------- */
+function renderFollowersList(){
+  const u = getUser(currentUser);
+  const el = document.getElementById('followers-list-body');
+  el.innerHTML = u.followers.length ? u.followers.map(uname=>{
+    const fu = getUser(uname);
+    if(!fu) return '';
+    return `<div class="list-row"><div class="avatar" onclick="viewProfile('${uname}')">${avatarHTML(uname)}</div><div class="name" style="flex:1;" onclick="viewProfile('${uname}')">${fu.name}${verifiedBadge(uname)}<div style="font-size:11.5px; color:var(--ink-soft); font-weight:400;">@${uname}</div></div></div>`;
+  }).join('') : '<div class="empty-note">No followers yet.</div>';
+}
+function renderBlockedList(){
+  const u = getUser(currentUser);
+  const el = document.getElementById('blocked-list-body');
+  el.innerHTML = u.blocked.length ? u.blocked.map(uname=>{
+    const bu = getUser(uname);
+    if(!bu) return '';
+    return `<div class="list-row"><div class="avatar">${avatarHTML(uname)}</div><div class="name" style="flex:1;">${bu.name}<div style="font-size:11.5px; color:var(--ink-soft); font-weight:400;">@${uname}</div></div><button class="mini-btn" onclick="toggleBlock('${uname}'); renderBlockedList();">Unblock</button></div>`;
+  }).join('') : '<div class="empty-note">No Block List found</div>';
+}
+function renderVideosGrid(){
+  const mine = posts().filter(p=>p.author===currentUser && p.mediaType==='video' && !p.archived);
+  const grid = document.getElementById('videos-grid');
+  grid.innerHTML = mine.length ? mine.map(p=>`<div class="grid-item" onclick="openComments(${p.id})"><video src="${p.media}"></video></div>`).join('') : '<div class="empty-note" style="grid-column:1/-1;">You have not posted any videos yet.</div>';
+}
+
+/* ---------------- leaderboard ---------------- */
+function renderLeaderboard(){
+  const ranked = users().map(u=>({u, coins:computeCoins(u)})).sort((a,b)=>b.coins-a.coins);
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('leaderboard-body').innerHTML = ranked.map((r,i)=>`
+    <div class="list-row" onclick="viewProfile('${r.u.username}')">
+      <div style="width:26px; text-align:center; font-weight:700; color:var(--ink-soft);">${medals[i]||(i+1)}</div>
+      <div class="avatar">${avatarHTML(r.u.username)}</div>
+      <div style="flex:1;"><div class="name">${r.u.name}${verifiedBadge(r.u.username)}${r.u.username===currentUser?' (You)':''}</div><div style="font-size:11.5px; color:var(--ink-soft);">${coinRank(r.coins)}</div></div>
+      <div class="coin-badge">🪙 ${r.coins>=1000?(r.coins/1000).toFixed(1)+'K':r.coins}</div>
+    </div>`).join('');
+}
+
+/* ---------------- streaks ---------------- */
+function computeStreak(){
+  const mine = posts().filter(p=>p.author===currentUser).map(p=>new Date(p.time).toDateString());
+  const daysSet = new Set(mine);
+  let streak = 0;
+  let day = new Date();
+  while(daysSet.has(day.toDateString())){
+    streak++;
+    day.setDate(day.getDate()-1);
+  }
+  return streak;
+}
+function renderStreaks(){
+  const streak = computeStreak();
+  document.getElementById('streaks-body').innerHTML = `
+    <div style="text-align:center; padding:30px 0;">
+      <div style="font-size:56px;">🔥</div>
+      <div style="font-family:var(--font-display); font-size:34px; font-weight:700; margin-top:8px;">${streak} day${streak!==1?'s':''}</div>
+      <div style="color:var(--ink-soft); font-size:13.5px; margin-top:4px;">${streak>0 ? 'Current posting streak — keep it going!' : 'Post today to start a new streak.'}</div>
+    </div>
+    <div class="empty-note">Post on consecutive days to build your streak. Missing a day resets it to zero.</div>
+  `;
+}
+
+/* ---------------- coins & quests ---------------- */
+/* ---------------- coins economy ---------------- */
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function bumpDailyCounter(field){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if(!me) return;
+  if(!me[field] || me[field].date!==todayStr()) me[field] = {date:todayStr(), count:0};
+  me[field].count++;
+  setUsers(u);
+}
+function getDailyCount(u, field){
+  return (u[field] && u[field].date===todayStr()) ? u[field].count : 0;
+}
+function logCoinActivity(me, type, amount){
+  if(!Array.isArray(me.activityLog)) me.activityLog=[];
+  me.activityLog.unshift({type, amount, time:Date.now()});
+  if(me.activityLog.length>60) me.activityLog.length=60;
+}
+function addCoins(amount, type){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if(!me) return;
+  me.coinsBalance = Math.max(0,(me.coinsBalance||0) + amount);
+  if(amount>0) me.lifetimeCoins = (me.lifetimeCoins||0) + amount;
+  logCoinActivity(me, type, amount);
+  setUsers(u);
+}
+function levelFromLifetime(lifetime){
+  const thresholds = [0,500,1500,3500,7000,12000,20000];
+  let level=1;
+  for(let i=0;i<thresholds.length;i++) if(lifetime>=thresholds[i]) level=i+1;
+  const next = thresholds[level] !== undefined ? thresholds[level] : thresholds[thresholds.length-1]+10000;
+  const prev = thresholds[level-1] || 0;
+  return {level, prev, next};
+}
+function getQuestDefs(u){
+  return [
+    {id:'open', label:'Open Frameo', sub:'Visit Coins Hub once per day', target:1, progress:1, reward:10},
+    {id:'like5', label:'Like 5 posts', sub:'Like posts in your Feed', target:5, progress:Math.min(5,getDailyCount(u,'dailyLikes')), reward:25},
+    {id:'comment3', label:'Comment on 3 posts', sub:'Comment on posts in your Feed', target:3, progress:Math.min(3,getDailyCount(u,'dailyComments')), reward:25},
+    {id:'follow2', label:'Follow 2 people', sub:'Follow people on the Search tab', target:2, progress:Math.min(2,getDailyCount(u,'dailyFollows')), reward:20},
+  ];
+}
+function claimQuest(id){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  const q = getQuestDefs(me).find(x=>x.id===id);
+  if(!q || q.progress<q.target) return;
+  if(!me.questClaims) me.questClaims={};
+  if(me.questClaims[id]===todayStr()){ toast('Already claimed today'); return; }
+  me.questClaims[id]=todayStr();
+  me.coinsBalance=(me.coinsBalance||0)+q.reward;
+  me.lifetimeCoins=(me.lifetimeCoins||0)+q.reward;
+  logCoinActivity(me,'QUEST REWARD',q.reward);
+  setUsers(u);
+  toast(`+${q.reward} coins!`);
+  renderQuests();
+}
+function watchAd(){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if(!me.adsToday || me.adsToday.date!==todayStr()) me.adsToday={date:todayStr(), count:0};
+  if(me.adsToday.count>=20){ toast('No more ads left today'); return; }
+  document.getElementById('ad-overlay').classList.add('show');
+  document.getElementById('ad-claim-btn').style.display='none';
+  let secs = 5;
+  document.getElementById('ad-countdown').textContent = secs;
+  document.getElementById('ad-status').textContent = `Your video starts in ${secs}s`;
+  document.getElementById('ad-progress').style.width = '0%';
+  clearInterval(window._adTimer);
+  window._adTimer = setInterval(()=>{
+    secs--;
+    if(secs>0){
+      document.getElementById('ad-countdown').textContent = secs;
+      document.getElementById('ad-progress').style.width = Math.round(((5-secs)/5)*100)+'%';
+    } else {
+      clearInterval(window._adTimer);
+      document.getElementById('ad-progress').style.width = '100%';
+      document.getElementById('ad-status').textContent = 'Ad complete — reward ready!';
+      document.getElementById('ad-claim-btn').style.display='block';
+    }
+  }, 1000);
+}
+function finishAdReward(){
+  document.getElementById('ad-overlay').classList.remove('show');
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if(!me.adsToday || me.adsToday.date!==todayStr()) me.adsToday={date:todayStr(), count:0};
+  me.adsToday.count++;
+  me.coinsBalance=(me.coinsBalance||0)+50;
+  me.lifetimeCoins=(me.lifetimeCoins||0)+50;
+  logCoinActivity(me,'AD REWARD',50);
+  setUsers(u);
+  toast('+50 coins!');
+  renderQuests();
+}
+function buyShields(count, cost){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if((me.coinsBalance||0)<cost){ toast('Not enough coins'); return; }
+  me.coinsBalance -= cost;
+  me.shields = (me.shields||0) + count;
+  logCoinActivity(me,'SHIELD PURCHASE',-cost);
+  setUsers(u);
+  toast(`Bought ${count} shield${count>1?'s':''}`);
+  renderQuests();
+}
+function buyProfileBoost(hours, cost){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if((me.coinsBalance||0)<cost){ toast('Not enough coins'); return; }
+  me.coinsBalance -= cost;
+  me.profileBoostUntil = Math.max(me.profileBoostUntil||0, Date.now()) + hours*3600000;
+  logCoinActivity(me,'PROFILE BOOST',-cost);
+  setUsers(u);
+  toast(`Profile boosted for ${hours}h`);
+  renderQuests();
+}
+let lbCategory='Followers', lbDuration='24h';
+function switchLbCategory(cat){ lbCategory=cat; renderQuests(); }
+function switchLbDuration(dur){ lbDuration=dur; renderQuests(); }
+function placeBid(){
+  const input = document.getElementById('bid-amount');
+  const amount = parseInt(input.value,10);
+  if(!amount || amount<1){ toast('Enter a bid amount'); return; }
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if((me.coinsBalance||0)<amount){ toast('Not enough coins for that bid'); return; }
+  const bids = load('frameo_lb_bids', {});
+  const key = lbCategory+'_'+lbDuration;
+  if(!bids[key]) bids[key]=[];
+  bids[key] = bids[key].filter(b=>b.user!==currentUser);
+  bids[key].push({user:currentUser, amount, expires: Date.now()+(lbDuration==='1h'?3600000:lbDuration==='6h'?21600000:lbDuration==='24h'?86400000:604800000)});
+  bids[key].sort((a,b)=>b.amount-a.amount);
+  save('frameo_lb_bids', bids);
+  me.coinsBalance -= amount;
+  logCoinActivity(me,'LEADERBOARD BID',-amount);
+  setUsers(u);
+  toast('Bid placed!');
+  renderQuests();
+}
+function switchQuestsTab(tab){
+  document.querySelectorAll('[data-qtab]').forEach(b=>b.classList.toggle('active', b.dataset.qtab===tab));
+  document.getElementById('quests-earn').style.display = tab==='earn' ? 'block':'none';
+  document.getElementById('quests-activity').style.display = tab==='activity' ? 'block':'none';
+}
+function renderQuests(){
+  const u = getUser(currentUser);
+  const balance = u.coinsBalance||0;
+  const lifetime = u.lifetimeCoins||0;
+  const {level, prev, next} = levelFromLifetime(lifetime);
+  const pct = Math.min(100, Math.round(((lifetime-prev)/(next-prev))*100));
+  const streak = computeStreak();
+  const quests = getQuestDefs(u);
+  const bids = load('frameo_lb_bids', {});
+  const key = lbCategory+'_'+lbDuration;
+  const bidList = (bids[key]||[]).filter(b=>b.expires>Date.now()).slice(0,10);
+
+  document.getElementById('quests-body').innerHTML = `
+    <div class="analytics-tabs" style="padding-top:10px;">
+      <button class="analytics-tab active" data-qtab="earn" onclick="switchQuestsTab('earn')">Earn</button>
+      <button class="analytics-tab" data-qtab="activity" onclick="switchQuestsTab('activity')">Activity</button>
+    </div>
+    <div id="quests-earn">
+      <div style="padding:14px 18px 0; font-size:12px; color:var(--ink-soft);">Soft coins for quests &amp; boosts — spend-only in-app (not cash).</div>
+      <div class="balance-card">
+        <div class="lvl">★ Level ${level}</div>
+        <div style="clear:both;"></div>
+        <div class="bignum">${balance} 🪙</div>
+        <div class="sub">coins · lifetime ${lifetime}</div>
+        <div class="prog-wrap"><span>${lifetime} / ${next} lifetime</span><span>${pct}%</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;"></div></div>
+        <div class="sub" style="margin-top:8px;">${Math.max(0,next-lifetime)} more lifetime coins to level ${level+1}</div>
+      </div>
+      <div class="quest-card">
+        <div class="quest-card-head"><div class="qicon">🔥</div><div><b>${streak}-day streak</b><div class="qsub">Best ${streak} · posting streak</div></div></div>
+        <div class="quest-card-head" style="margin-top:14px;"><div class="qicon" style="background:#1E3A5F; color:#5CA9FF;">🛡️</div><div><b>Shields ${u.shields||0} / 3</b><div class="qsub">Auto-used if you miss a quest day.</div></div></div>
+        <div class="shield-row">
+          <button class="shield-btn" onclick="buyShields(1,200)">Buy 1 · 200</button>
+          <button class="shield-btn" onclick="buyShields(3,500)">3-pack · 500</button>
+        </div>
+      </div>
+      <div class="quest-card">
+        <div class="quest-card-head"><div class="qicon" style="background:#2E2A55; color:#9C8CFF;">▶️</div><div><b>Earn coins</b><div class="qsub">Watch a short ad for ~50 coins. ${20-((u.adsToday&&u.adsToday.date===todayStr())?u.adsToday.count:0)} left today.</div></div></div>
+        <button class="ad-btn" onclick="watchAd()">▶ Watch ad (+50)</button>
+      </div>
+      <div class="quest-card">
+        <div class="quest-card-head"><div class="qicon" style="background:#2E2A55; color:#9C8CFF;">🛍️</div><div><b>Coin shop</b><div class="qsub">Profile / leaderboard boosts from catalog.</div></div></div>
+        <div class="shop-row"><div><div class="stitle">PROFILE · 1 hour</div><div class="ssub">60 min · 75 coins</div></div><button class="buy-btn" onclick="buyProfileBoost(1,75)">Buy</button></div>
+        <div class="shop-row"><div><div class="stitle">PROFILE · 6 hours</div><div class="ssub">360 min · 200 coins</div></div><button class="buy-btn" onclick="buyProfileBoost(6,200)">Buy</button></div>
+        <div class="shop-row"><div><div class="stitle">PROFILE · 24 hours</div><div class="ssub">1440 min · 500 coins</div></div><button class="buy-btn" onclick="buyProfileBoost(24,500)">Buy</button></div>
+      </div>
+      <div class="quest-card">
+        <div class="quest-card-head"><div class="qicon" style="background:#2E2A55; color:#9C8CFF;">📈</div><div><b>Leaderboard bidding</b><div class="qsub">Top 10 bidders per category hold a boosted rank.</div></div></div>
+        <div class="section-label" style="padding:10px 0 4px;">Category</div>
+        <select class="login-input" onchange="switchLbCategory(this.value)">
+          <option ${lbCategory==='Followers'?'selected':''}>Followers</option>
+          <option ${lbCategory==='Coins'?'selected':''}>Coins</option>
+          <option ${lbCategory==='Likes'?'selected':''}>Likes</option>
+        </select>
+        <div class="section-label" style="padding:10px 0 4px;">Duration</div>
+        <div class="duration-tabs">
+          ${['1h','6h','24h','7d'].map(d=>`<button class="duration-tab ${lbDuration===d?'active':''}" onclick="switchLbDuration('${d}')">${d}</button>`).join('')}
+        </div>
+        ${bidList.length ? bidList.map((b,i)=>`<div class="lb-row"><span class="rank">#${i+1}</span><span class="lbname">${b.user===currentUser?'You':'@'+b.user}</span><span class="lbamt">${b.amount} 🪙</span></div>`).join('') : '<div class="empty-note">No bids yet — be the first.</div>'}
+        <input class="login-input" id="bid-amount" type="number" placeholder="Your bid (coins)" style="margin-top:10px;">
+        <button class="buy-btn" style="width:100%; margin-top:10px; padding:12px;" onclick="placeBid()">Place bid</button>
+      </div>
+      <div class="quest-card">
+        <div class="quest-card-head"><div class="qicon" style="background:#4A3313; color:#F2A93B;">⭐</div><div><b>Invite rewards</b><div class="qsub">Friends who join with your invite earn you coins.</div></div></div>
+        <div style="display:flex; gap:10px; margin-top:12px;">
+          <button class="shield-btn" onclick="copyReferralLink()">Copy link</button>
+          <button class="shield-btn" style="background:#FF5C1F; color:#fff; border:none;" onclick="shareOnWhatsApp()">Share</button>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:22px 18px 4px;"><b style="font-family:var(--font-display); font-size:16px;">Today's quests</b><button class="mini-btn" onclick="renderQuests()">Refresh</button></div>
+      ${quests.map(q=>{
+        const claimed = u.questClaims && u.questClaims[q.id]===todayStr();
+        const done = q.progress>=q.target;
+        return `<div class="quest-card" style="${done?'border-color:#3AD07A;':''}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div><b style="font-size:14px;">${q.label}</b><div class="qsub">${q.progress}/${q.target} · ${q.sub}</div></div>
+            ${claimed ? '<span style="color:#3AD07A; font-weight:700; font-size:13px;">✓ Done</span>' : done ? `<button class="buy-btn" onclick="claimQuest('${q.id}')">Claim +${q.reward}</button>` : `<span style="color:var(--ink-soft); font-weight:700; font-size:13px;">+${q.reward} 🪙</span>`}
+          </div>
+          <div class="verify-progress-bar"><div class="verify-progress-fill" style="width:${Math.min(100,(q.progress/q.target)*100)}%; background:${done?'#3AD07A':'#3897F0'};"></div></div>
+        </div>`;
+      }).join('')}
+      <div style="height:24px;"></div>
+    </div>
+    <div id="quests-activity" style="display:none; padding-top:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0 18px 12px;">
+        <div><b style="font-family:var(--font-display); font-size:17px;">Recent activity</b><div style="font-size:12px; color:var(--ink-soft);">Earn and spend history for your coin balance.</div></div>
+        <button class="mini-btn" onclick="renderQuests()">Refresh</button>
+      </div>
+      ${(u.activityLog&&u.activityLog.length) ? u.activityLog.map(a=>`<div class="activity-row"><div><div class="atitle">${a.type}</div><div class="atime">${new Date(a.time).toISOString().slice(0,19).replace('T',' ')}</div></div><div class="aamt">${a.amount>=0?'+':''}${a.amount}</div></div>`).join('') : '<div class="empty-note">No activity yet.</div>'}
+      <div style="height:24px;"></div>
+    </div>
+  `;
+}
+
+function renderThreads(){
+  const m = messages();
+  const mine = Object.keys(m).filter(k=>k.split('__').includes(currentUser)).map(k=>{
+    const partner = k.split('__').find(u=>u!==currentUser);
+    const log = m[k];
+    return {key:k, partner, last: log[log.length-1]};
+  }).filter(t=>t.last).sort((a,b)=>b.last.time-a.last.time);
+  const el = document.getElementById('thread-list');
+  if(!mine.length){ el.innerHTML = '<div class="empty-note">No conversations yet. Visit a profile to say hi.</div>'; return; }
+  el.innerHTML = mine.map(t=>{
+    const u = getUser(t.partner);
+    if(!u) return '';
+    return `<div class="thread-row" onclick="openChat('${t.partner}')">
+      <div class="avatar">${avatarHTML(t.partner)}</div>
+      <div class="thread-text"><div class="name">${u.name}</div><div class="preview">${t.last.from===currentUser?'You: ':''}${t.last.text}</div></div>
+      <div class="thread-time">${timeAgo(t.last.time)}</div>
+    </div>`;
+  }).join('');
+}
+function openChat(partner){
+  activeChatPartner = partner;
+  activeThreadKey = threadKey(currentUser, partner);
+  document.getElementById('chat-name').textContent = getUser(partner).name;
+  renderChat();
+  goTo('chat');
+}
+function renderChat(){
+  const m = messages();
+  const log = m[activeThreadKey] || [];
+  const el = document.getElementById('chat-body');
+  el.innerHTML = log.length ? log.map(x=>`<div class="bubble ${x.from===currentUser?'me':'them'}">${x.text}</div>`).join('') : '<div class="empty-note">Say hello 👋</div>';
+  el.scrollTop = 999999;
+}
+function sendChat(){
+  const input = document.getElementById('chat-input');
+  if(!input.value.trim()) return;
+  const m = messages();
+  if(!m[activeThreadKey]) m[activeThreadKey]=[];
+  m[activeThreadKey].push({from:currentUser, text:input.value.trim(), time:Date.now()});
+  setMessages(m);
+  pushNotification(activeChatPartner, `<b>@${currentUser}</b> sent you a message`);
+  input.value='';
+  renderChat();
+}
+
+/* ---------------- upload ---------------- */
+function handleFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const drop = document.getElementById('upload-drop');
+  if(file.type.startsWith('video')){
+    if(file.size > 3*1024*1024){ toast('Video too large for this demo — please pick one under 3MB'); e.target.value=''; return; }
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      pendingMedia = {dataUrl: ev.target.result, type:'video'};
+      drop.innerHTML = `<video src="${pendingMedia.dataUrl}" controls style="max-width:100%;max-height:220px;border-radius:10px;"></video>`;
+      toast('Video added');
+    };
+    reader.onerror = ()=> toast('Could not read that video — try another file');
+    reader.readAsDataURL(file);
+  } else if(file.type.startsWith('image')){
+    const reader = new FileReader();
+    reader.onload = async ev=>{
+      const compressed = await compressImage(ev.target.result, 1000, 0.72);
+      pendingMedia = {dataUrl: compressed, type:'image'};
+      drop.innerHTML = `<img src="${compressed}">`;
+      toast('Photo added');
+    };
+    reader.onerror = ()=> toast('Could not read that photo — try another file');
+    reader.readAsDataURL(file);
+  } else {
+    toast('Please choose a photo or video file');
+  }
+}
+function submitPost(){
+  const caption = document.getElementById('caption-input').value.trim();
+  if(!pendingMedia && !caption){ toast('Add a photo/video or a caption first'); return; }
+  const p = posts();
+  const nextId = load('frameo_next_id', p.length+1);
+  p.push({id:nextId, author:currentUser, media: pendingMedia?pendingMedia.dataUrl:null, mediaType: pendingMedia?pendingMedia.type:'none', caption: caption||'', likes:[], comments:[], time:Date.now(), reported:false, savedBy:[], pinned:false, archived:false});
+  const ok = setPosts(p);
+  if(!ok){ return; } // save() already showed the storage-full toast; keep the form so nothing is lost
+  save('frameo_next_id', nextId+1);
+  pendingMedia = null;
+  document.getElementById('caption-input').value='';
+  document.getElementById('upload-drop').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-9 9"/></svg><div>Tap to choose a photo or video</div>`;
+  toast('Posted!');
+  renderFeed();
+  goTo('home');
+}
+
+/* ---------------- AI assistant (rule-based demo) ---------------- */
+function aiReply(q){
+  const s = q.toLowerCase();
+  if(s.includes('caption') && s.includes('sunset')) return `Here are a few options:\n1. "Chasing skies that don't stay still."\n2. "Golden hour, golden mood."\n3. "The sky showing off again."`;
+  if(s.includes('hashtag')) return `Try mixing broad and niche tags, e.g. #travelgram #wanderlust #exploremore, plus 2-3 specific to your exact location so the right people find the post.`;
+  if(s.includes('private')) return `Go to your profile, then Settings, then Privacy, and turn on "Private account." Only approved followers will see your posts after that.`;
+  if(s.includes('caption')) return `Tell me what's in the photo or video and the mood you're going for, and I'll draft a few caption options.`;
+  if(s.includes('follow') || s.includes('unfollow')) return `Open the person's profile or find them in Search, then tap Follow or Following to toggle it.`;
+  if(s.includes('report') || s.includes('block')) return `Tap the ⋯ menu on a post to report it, or open a profile to block someone. Reports go straight to the admin dashboard.`;
+  return `I can help with captions, hashtags, privacy settings, or how things work in the app — try one of the suggestions above or ask me directly.`;
+}
+function askAI(q){ document.getElementById('ai-input').value=q; sendAI(); }
+function sendAI(){
+  const input = document.getElementById('ai-input');
+  const q = input.value.trim();
+  if(!q) return;
+  const body = document.getElementById('ai-body');
+  body.innerHTML += `<div class="bubble me">${q}</div>`;
+  body.innerHTML += `<div class="bubble them">${aiReply(q).replace(/\\n/g,'<br>')}</div>`;
+  input.value='';
+  body.scrollTop = 999999;
+}
+
+/* ---------------- profile ---------------- */
+function viewProfile(uname){
+  viewingProfile = uname;
+  renderProfile();
+  goTo('profile');
+}
+function computeCoins(u){
+  return u.lifetimeCoins||0;
+}
+function coinRank(coins){
+  if(coins>=5000) return 'Gold';
+  if(coins>=2000) return 'Bronze II';
+  if(coins>=500) return 'Bronze I';
+  return 'Rookie';
+}
+function renderProfile(){
+  const u = getUser(viewingProfile);
+  if(!u) return;
+  const isMine = viewingProfile===currentUser;
+  document.getElementById('profile-back').style.display = isMine ? 'none' : 'flex';
+  document.getElementById('profile-admin-btn').style.display = isMine ? 'flex' : 'none';
+  document.getElementById('profile-cover').innerHTML = (u.cover ? `<img src="${u.cover}">` : '') + (isMine ? `<label class="cover-cam" for="cover-file-input"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.2"/><path d="M8 7l1.4-2.4A1 1 0 0110.3 4h3.4a1 1 0 01.9.6L16 7"/></svg></label><input type="file" id="cover-file-input" accept="image/*" style="display:none;" onchange="handleCoverFile(event)">` : '');
+  document.getElementById('profile-avatar').innerHTML = (u.avatar ? `<img src="${u.avatar}">` : u.name[0].toUpperCase()) + (isMine ? `<label class="avatar-cam" for="profile-avatar-file-input"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3"/></svg></label><input type="file" id="profile-avatar-file-input" accept="image/*" style="display:none;" onchange="handleQuickAvatarFile(event)">` : '');
+  document.getElementById('profile-name').textContent = u.name;
+  document.getElementById('profile-verified-badge').innerHTML = verifiedBadge(u.username);
+  document.getElementById('profile-handle').textContent = '@'+u.username;
+  document.getElementById('get-verified-btn').style.display = (isMine && !u.verified) ? 'inline-flex' : 'none';
+  document.getElementById('profile-bio-text').textContent = u.bio;
+
+  const coins = u.coinsBalance||0;
+  const lifetimeForRank = u.lifetimeCoins||0;
+  const daysSinceJoin = Math.floor((Date.now()-(u.joinedAt||Date.now()))/86400000);
+  let badges = `<div class="coin-badge">🪙 ${coins>=1000?(coins/1000).toFixed(1)+'K':coins}</div><div class="rank-badge">${coinRank(lifetimeForRank)}</div>`;
+  if(daysSinceJoin<=14) badges += `<div class="fresh-badge">🌱 Fresh</div>`;
+  document.getElementById('profile-badges').innerHTML = badges;
+
+  const infoRows = [];
+  if(u.job) infoRows.push([`<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/>`, u.job]);
+  if(u.gender) infoRows.push([`<circle cx="12" cy="8" r="4"/><path d="M12 12v9M9 18h6"/>`, u.gender]);
+  if(u.age) infoRows.push([`<rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="12" cy="11" r="3"/>`, u.age+' years old']);
+  infoRows.push([`<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`, 'Joined on '+new Date(u.joinedAt||Date.now()).toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric'})]);
+  if(u.location) infoRows.push([`<path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>`, 'Lives in '+u.location]);
+  if(u.website) infoRows.push([`<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z"/>`, `<a href="${u.website}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${u.website}</a>`]);
+  document.getElementById('profile-info-rows').innerHTML = infoRows.map(r=>`<div class="info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${r[0]}</svg><span>${r[1]}</span></div>`).join('');
+
+  const myPosts = posts().filter(p=>p.author===u.username && !p.archived);
+  const totalLikes = myPosts.reduce((a,p)=>a+p.likes.length,0);
+  document.getElementById('stat-posts').textContent = myPosts.length;
+  document.getElementById('stat-followers').textContent = u.followers.length;
+  document.getElementById('stat-following').textContent = u.following.length;
+  document.getElementById('stat-likes').textContent = totalLikes;
+  document.getElementById('profile-stats-row').style.display = 'flex';
+
+  const actions = document.getElementById('profile-actions');
+  if(isMine){
+    actions.innerHTML = `<button class="btn-blue" onclick="openEditProfile()">Edit Profile</button><button class="icon-round" onclick="shareProfile('${u.username}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg></button>`;
+  } else {
+    const following = getUser(currentUser).following.includes(u.username);
+    actions.innerHTML = `<button class="${following?'btn-outline':'btn-blue'}" style="padding:9px 16px; font-size:13px;" onclick="toggleFollow('${u.username}')">${following?'Following':'Follow'}</button><button class="icon-round" onclick="openChat('${u.username}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></button><button class="icon-round" onclick="profileOptions('${u.username}')">${moreIcon}</button>`;
+  }
+  const grid = document.getElementById('profile-grid');
+  const lockNote = document.getElementById('private-lock-note');
+  const canSee = isMine || !u.private || u.followers.includes(currentUser);
+  if(!canSee){
+    lockNote.style.display='block';
+    grid.style.display='none';
+  } else {
+    lockNote.style.display='none';
+    grid.style.display='grid';
+    const sorted = myPosts.slice().sort((a,b)=> (b.pinned-a.pinned) || (b.time-a.time));
+    grid.innerHTML = sorted.length ? sorted.map(p=>{
+      let inner = p.mediaType==='image' ? `<img src="${p.media}">` : p.mediaType==='video' ? `<video src="${p.media}"></video>` : '🖼';
+      const pin = p.pinned ? `<div style="position:absolute; top:6px; right:6px; color:#fff; filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 5.5L19 9l-4.5 3L16 18l-4-3-4 3 1.5-6L5 9l5.5-1.5z"/></svg></div>` : '';
+      return `<div class="grid-item" style="position:relative;" onclick="openComments(${p.id})">${inner}${pin}</div>`;
+    }).join('') : '<div class="empty-note" style="grid-column:1/-1;">No posts yet.</div>';
+  }
+}
+function shareProfile(uname){
+  const link = `https://frameo.app/@${uname}`;
+  try{ navigator.clipboard.writeText(link); toast('Profile link copied'); }
+  catch(e){ toast(link); }
+}
+function requestVerification(){
+  const u = users(); const me = u.find(x=>x.username===currentUser);
+  if(!me.verificationRequested){ me.verificationRequested=true; setUsers(u); toast('Verification request sent to admins'); }
+  else toast('Your request is already pending review');
+}
+function handleCoverFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev=>{
+    const compressed = await compressImage(ev.target.result, 900, 0.72);
+    const u = users(); const me = u.find(x=>x.username===currentUser);
+    me.cover = compressed;
+    setUsers(u);
+    toast('Cover photo updated');
+    renderProfile();
+  };
+  reader.readAsDataURL(file);
+}
+function handleQuickAvatarFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev=>{
+    const compressed = await compressImage(ev.target.result, 400, 0.75);
+    const u = users(); const me = u.find(x=>x.username===currentUser);
+    me.avatar = compressed;
+    setUsers(u);
+    toast('Profile photo updated');
+    renderProfile();
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ---------------- edit profile & settings ---------------- */
+let pendingAvatar = null;
+function openEditProfile(){
+  try{
+    const u = getUser(currentUser);
+    if(!u){ toast('Could not load your account — please log in again'); return; }
+    document.getElementById('edit-name').value = u.name;
+    document.getElementById('edit-username').value = u.username;
+    document.getElementById('edit-bio').value = u.bio;
+    document.getElementById('edit-job').value = u.job||'';
+    document.getElementById('edit-gender').value = u.gender||'';
+    document.getElementById('edit-age').value = u.age||'';
+    document.getElementById('edit-location').value = u.location||'';
+    document.getElementById('edit-website').value = u.website||'';
+    document.getElementById('edit-avatar-preview').innerHTML = u.avatar ? `<img src="${u.avatar}">` : u.name[0].toUpperCase();
+    document.getElementById('edit-error').textContent='';
+    pendingAvatar = null;
+    goTo('editprofile');
+  }catch(err){ toast('Error: '+err.message); }
+}
+function handleAvatarFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev=>{
+    pendingAvatar = await compressImage(ev.target.result, 400, 0.75);
+    document.getElementById('edit-avatar-preview').innerHTML = `<img src="${pendingAvatar}">`;
+    toast('Photo added');
+  };
+  reader.onerror = ()=> toast('Could not read that photo — try another file');
+  reader.readAsDataURL(file);
+}
+function saveEditProfile(){
+  try{
+  const err = document.getElementById('edit-error');
+  const name = document.getElementById('edit-name').value.trim();
+  const newUsername = document.getElementById('edit-username').value.trim().toLowerCase();
+  const bio = document.getElementById('edit-bio').value.trim();
+  if(!name || !newUsername){ err.textContent='Name and username are required'; return; }
+  if(newUsername!==currentUser && getUser(newUsername)){ err.textContent='That username is already taken'; return; }
+  const u = users();
+  const me = u.find(x=>x.username===currentUser);
+  if(!me){ err.textContent='Could not find your account'; return; }
+  me.name = name;
+  me.bio = bio;
+  me.job = document.getElementById('edit-job').value.trim();
+  me.gender = document.getElementById('edit-gender').value;
+  const ageVal = parseInt(document.getElementById('edit-age').value);
+  me.age = isNaN(ageVal) ? null : ageVal;
+  me.location = document.getElementById('edit-location').value.trim();
+  me.website = document.getElementById('edit-website').value.trim();
+  if(pendingAvatar) me.avatar = pendingAvatar;
+  if(newUsername!==currentUser){
+    const old = currentUser;
+    me.username = newUsername;
+    // update references across posts, notifications, messages, follower lists
+    const p = posts(); p.forEach(post=>{
+      if(post.author===old) post.author=newUsername;
+      post.likes = post.likes.map(l=>l===old?newUsername:l);
+      post.comments.forEach(c=>{ if(c.author===old) c.author=newUsername; });
+    });
+    setPosts(p);
+    u.forEach(usr=>{
+      usr.followers = usr.followers.map(f=>f===old?newUsername:f);
+      usr.following = usr.following.map(f=>f===old?newUsername:f);
+    });
+    const n = notifications(); if(n[old]){ n[newUsername]=n[old]; delete n[old]; } setNotifications(n);
+    const m = messages(); const renamed={};
+    Object.keys(m).forEach(k=>{ const parts=k.split('__').map(x=>x===old?newUsername:x); renamed[threadKey(parts[0],parts[1])] = m[k]; m[k].forEach(msg=>{ if(msg.from===old) msg.from=newUsername; }); });
+    setMessages(renamed);
+    currentUser = newUsername;
+    save('frameo_current_user', newUsername);
+  }
+  setUsers(u);
+  err.textContent='';
+  toast('Profile updated');
+  viewProfile(currentUser);
+  }catch(err){ toast('Error: '+err.message); document.getElementById('edit-error').textContent = err.message; }
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function togglePrivateAccount(){
+  try{
+    const u = users(); const me = u.find(x=>x.username===currentUser);
+    if(!me){ toast('Could not find your account — please log in again'); return; }
+    me.private = !me.private;
+    setUsers(u);
+    renderSettings();
+    toast(me.private ? 'Account is now private' : 'Account is now public');
+  }catch(err){ toast('Error: '+err.message); }
+}
+function toggleNotifPref(key){
+  try{
+    const u = users(); const me = u.find(x=>x.username===currentUser);
+    if(!me){ toast('Could not find your account — please log in again'); return; }
+    me[key] = me[key]===false ? true : false;
+    setUsers(u);
+    renderSettings();
+    toast('Preference updated');
+  }catch(err){ toast('Error: '+err.message); }
+}
+function renderSettings(){
+  try{
+    const u = getUser(currentUser);
+    if(!u){ toast('Could not load your account'); return; }
+    document.getElementById('private-toggle-btn').classList.toggle('on', !!u.private);
+    document.getElementById('dark-toggle-btn').classList.toggle('on', document.documentElement.getAttribute('data-theme')==='dark');
+    document.getElementById('settings-current-pass').value='';
+    document.getElementById('settings-new-pass').value='';
+    document.getElementById('settings-pass-error').textContent='';
+  }catch(err){ toast('Error: '+err.message); }
+}
+function changePassword(){
+  try{
+    const err = document.getElementById('settings-pass-error');
+    const current = document.getElementById('settings-current-pass').value;
+    const next = document.getElementById('settings-new-pass').value;
+    const u = users(); const me = u.find(x=>x.username===currentUser);
+    if(!me){ err.textContent='Could not find your account'; return; }
+    if(me.password!==current){ err.textContent='Current password is incorrect'; return; }
+    if(!next || next.length<3){ err.textContent='New password is too short'; return; }
+    me.password = next;
+    setUsers(u);
+    err.textContent='';
+    document.getElementById('settings-current-pass').value='';
+    document.getElementById('settings-new-pass').value='';
+    toast('Password updated');
+  }catch(err){ toast('Error: '+err.message); }
+}
+function deleteAccount(){
+  try{
+    if(!confirm('Delete your account permanently? This cannot be undone.')) return;
+    setUsers(users().filter(u=>u.username!==currentUser));
+    setPosts(posts().filter(p=>p.author!==currentUser));
+    logOut();
+  }catch(err){ toast('Error: '+err.message); }
+}
+function resetAppData(){
+  if(!confirm('This clears all local demo data (accounts, posts, messages) and restarts fresh. Continue?')) return;
+  ['frameo_users','frameo_posts','frameo_next_id','frameo_notifications','frameo_messages','frameo_current_user'].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+
+/* ---------------- admin ---------------- */
+function adminTab(tab){
+  document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  const el = document.getElementById('admin-content');
+  const allUsers = users(); const allPosts = posts();
+  if(tab==='overview'){
+    const reportCount = allPosts.filter(p=>p.reported).length;
+    const verifCount = allUsers.filter(u=>u.verificationRequested && !u.verified).length;
+    el.innerHTML = `<div class="stat-cards">
+      <div class="stat-card"><b>${allUsers.length}</b><span>Total users</span></div>
+      <div class="stat-card"><b>${allPosts.length}</b><span>Total posts</span></div>
+      <div class="stat-card"><b>${reportCount}</b><span>Open reports</span></div>
+      <div class="stat-card"><b>${verifCount}</b><span>Verification requests</span></div>
+    </div>`;
+  } else if(tab==='reports'){
+    const reported = allPosts.filter(p=>p.reported);
+    el.innerHTML = reported.length ? reported.map(p=>`
+      <div class="admin-row">
+        <div class="admin-row-text"><div class="name">Post by @${p.author}</div><div class="meta">${p.caption.slice(0,50)}${p.caption.length>50?'…':''}</div></div>
+        <span class="admin-flag">Reported</span>
+        <button class="mini-btn" onclick="adminDismiss(${p.id})">Dismiss</button>
+        <button class="mini-btn" onclick="adminDeletePost(${p.id})">Delete</button>
+      </div>`).join('') : '<div class="empty-note">No open reports.</div>';
+  } else if(tab==='verify'){
+    const pending = allUsers.filter(u=>u.verificationRequested && !u.verified);
+    el.innerHTML = pending.length ? pending.map(u=>`
+      <div class="admin-row">
+        <div class="avatar">${avatarHTML(u.username)}</div>
+        <div class="admin-row-text"><div class="name">${u.name}</div><div class="meta">@${u.username} · ${u.followers.length} followers</div></div>
+        <button class="mini-btn" onclick="adminApproveVerification('${u.username}')">Approve</button>
+        <button class="mini-btn" onclick="adminDenyVerification('${u.username}')">Deny</button>
+      </div>`).join('') : '<div class="empty-note">No pending verification requests.</div>';
+  } else {
+    el.innerHTML = allUsers.map(u=>`
+      <div class="admin-row">
+        <div class="avatar">${avatarHTML(u.username)}</div>
+        <div class="admin-row-text"><div class="name">${u.name}${verifiedBadge(u.username)}</div><div class="meta">@${u.username} · ${u.followers.length} followers · ${posts().filter(p=>p.author===u.username).length} posts</div></div>
+        ${u.username!==currentUser ? `<button class="mini-btn" onclick="adminRemoveUser('${u.username}')">Remove</button>` : `<span class="admin-flag" style="color:var(--ink-soft); background:var(--paper);">You</span>`}
+      </div>`).join('');
+  }
+}
+function adminApproveVerification(uname){
+  const u = users(); const usr = u.find(x=>x.username===uname);
+  usr.verified = true; usr.verificationRequested = false;
+  setUsers(u);
+  pushNotification(uname, `You're verified! Your account now has a verified badge.`, 'follow');
+  toast(`@${uname} is now verified`);
+  adminTab('verify');
+}
+function adminDenyVerification(uname){
+  const u = users(); const usr = u.find(x=>x.username===uname);
+  usr.verificationRequested = false;
+  setUsers(u);
+  toast('Request denied');
+  adminTab('verify');
+}
+function adminDismiss(id){ const p = posts(); p.find(x=>x.id===id).reported=false; setPosts(p); adminTab('reports'); }
+function adminDeletePost(id){ if(!confirm('Delete this post permanently?')) return; setPosts(posts().filter(x=>x.id!==id)); adminTab('reports'); renderFeed(); }
+function adminRemoveUser(uname){
+  if(!confirm('Remove this user and their posts?')) return;
+  setUsers(users().filter(u=>u.username!==uname));
+  setPosts(posts().filter(p=>p.author!==uname));
+  adminTab('users'); renderFeed();
+}
+
+/* ---------------- nav ---------------- */
+function goTo(screen){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+screen).classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.screen===screen));
+  if(currentUser) document.getElementById('bottomnav').style.display = (screen==='storyviewer') ? 'none' : 'flex';
+  if(screen==='home'){ renderStories(); renderFeed(); }
+  if(screen==='search') renderSearch('');
+  if(screen==='notifications') renderNotifs();
+  if(screen==='messages') renderThreads();
+  if(screen==='profile' && !viewingProfile) viewingProfile = currentUser;
+  if(screen==='settings') renderSettings();
+  if(screen==='saved') renderSaved();
+  if(screen==='archived') renderArchived();
+  if(screen==='menu') renderMenu();
+  if(screen==='reels') renderReels();
+  if(screen==='followerslist') renderFollowersList();
+  if(screen==='blockedlist') renderBlockedList();
+  if(screen==='videos') renderVideosGrid();
+  if(screen==='leaderboard') renderLeaderboard();
+  if(screen==='streaks') renderStreaks();
+  if(screen==='quests') renderQuests();
+  if(screen==='insights') renderInsights();
+  if(screen==='notifsettings') renderNotifSettings();
+  if(screen==='verification') renderVerification();
+  if(screen==='referrals') renderReferrals();
+  window.scrollTo(0,0);
+}
+
+/* init */
+if(currentUser){ document.getElementById('bottomnav').style.display='flex'; goTo('home'); }
+else { toggleAuthMode(); toggleAuthMode(); } // no-op to set initial labels
+setInterval(()=>{ if(currentUser && document.getElementById('screen-home').classList.contains('active')) updateNotifBadge(); }, 4000);
+if(currentUser) updateNotifBadge();
+</script>
+<script src="https://pl31535085.profitableratecpmnetwork.com/ed/cd/c0/edcdc05a78c5f98c75d4ba76f05b823c.js"></script>
+</body>
+</html>
